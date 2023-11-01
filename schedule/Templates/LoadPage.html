@@ -3,6 +3,9 @@
 <head>
   <title>Carregamento de CSV com Papa Parse e Tabulator</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/5.0.5/css/tabulator.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/5.0.5/js/tabulator.min.js"></script>
+  <script src="https://unpkg.com/mathjs@12.0.0/lib/browser/math.js"></script>
 </head>
 <body>
   
@@ -10,19 +13,73 @@
     let jsonData;
     let csvSeparator = ';';
     let expectedHeaders = "Curso,Unidade de execução,Turno,Turma,Inscritos no turno,Dia da Semana,Início,Fim,Dia,Características da sala pedida para a aula,Sala da aula,Lotação,Características reais da sala";
-    let expectedHeadersArray = expectedHeaders.split(',');
-  </script>
+    let dynamicCriterium = ""
+    let hourFormat = "" //TODO Verificar qual o formato da hora default
 
+  </script>
+  <button id="show-form-button">Show Form</button>
+    <form id="hidden-form" style="display: none;">
+      <!-- Input fields and submit button go here -->
+      <label for="delimiter">Delimiter:</label>
+      <input type="text" id="delimiter" name="delimiter"><br>
+
+      <label for="hformat">Hour Format:</label>
+      <input type="text" id="hformat" name="hformat"><br>
+
+      <label for="headers">Headers:</label>
+      <input type="text" id="headers" name="headers"><br>
+
+      <label for="criterium">Dynamic criterium:</label>
+      <input type="text" id="criterium" name="criterium"><br>
+
+      <input type="submit" value="Submit">
+    </form>
+  <br>
   <input type="file" id="csvFileInput">
   <div id="csvData"></div>
+  
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/5.0.5/js/tabulator.min.js"></script>
   <script>
+
+    const showFormButton = document.getElementById("show-form-button");
+    const form = document.getElementById("hidden-form");
+
+    //Permite que o botao desapareca e apareca
+    showFormButton.addEventListener("click", () => {
+      if (form.style.display === "none") {
+        form.style.display = "block";
+      } else {
+        form.style.display = "none";
+      }
+    });
+
+    form.addEventListener("submit", function(event) {
+      event.preventDefault(); // Prevent the form from actually submitting
+
+      if(document.getElementById("delimiter").value != ""){
+        csvSeparator = document.getElementById("delimiter").value;
+      }
+      if(document.getElementById("headers").value != ""){
+        expectedHeaders = document.getElementById("headers").value;
+      }
+      if(document.getElementById("criterium").value != ""){
+        dynamicCriterium = document.getElementById("criterium").value;
+      }
+      if(document.getElementById("hformat").value != ""){
+        hourFormat = document.getElementById("hformat").value;
+      }
+
+      // Debug
+      console.log("Delimiter:", csvSeparator);
+      console.log("Headers:", expectedHeaders);
+      console.log("Criterium:", math.evaluate(dynamicCriterium));
+      console.log("Hour Format:", hourFormat);
+    });
+
+    let expectedHeadersArray = expectedHeaders.split(',');
 
     document.getElementById("csvFileInput").addEventListener("change", function (e) {
       const file = e.target.files[0];
-
       if (file) {
         Papa.parse(file, {
           delimiter: csvSeparator,
@@ -30,9 +87,13 @@
           complete: function (results) {
             jsonData = results.data;
             const csvDataDiv = document.getElementById("csvData");
+            const previousTable = document.getElementById("csvTable");
+            
+            if (previousTable) {
+              previousTable.remove();
+            }
 
             const headersMatch = expectedHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
-
 
             if (headersMatch) {
 
@@ -52,8 +113,9 @@
                 pagination: "local",
                 paginationSize: 7,
               });
+
             } else {
-              // Notifique o usuário que os cabeçalhos não correspondem
+
               alert("Os cabeçalhos do CSV não correspondem aos esperados. Insira as alterações necessárias");
             }
           }
