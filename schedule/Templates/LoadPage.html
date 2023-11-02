@@ -14,25 +14,29 @@
     let csvSeparator = ';';
     let expectedHeaders = "Curso,Unidade de execução,Turno,Turma,Inscritos no turno,Dia da Semana,Início,Fim,Dia,Características da sala pedida para a aula,Sala da aula,Lotação,Características reais da sala";
     let dynamicCriterium = ""
-    let hourFormat = "" //TODO Verificar qual o formato da hora default
+    let hourFormat = "hh/mm/ss" //TODO Verificar qual o formato da hora default
+    let dateFormat = "dd/mm/aaaa"
 
   </script>
-  <button id="show-form-button">Show Form</button>
+  <button id="show-form-button">Alterar Configurações Ficheiro</button>
     <form id="hidden-form" style="display: none;">
       <!-- Input fields and submit button go here -->
-      <label for="delimiter">Delimiter:</label>
+      <label for="delimiter">Delimitador:</label>
       <input type="text" id="delimiter" name="delimiter"><br>
 
-      <label for="hformat">Hour Format:</label>
+      <label for="hformat">Formato hora:</label>
       <input type="text" id="hformat" name="hformat"><br>
 
-      <label for="headers">Headers:</label>
+      <label for="dformat">Formato data:</label>
+      <input type="text" id="dformat" name="dformat"><br>
+
+      <label for="headers">Cabeçalhos:</label>
       <input type="text" id="headers" name="headers"><br>
 
-      <label for="criterium">Dynamic criterium:</label>
+      <label for="criterium">Critério Dinâmico:</label>
       <input type="text" id="criterium" name="criterium"><br>
 
-      <input type="submit" value="Submit">
+      <input type="submit" value="Submeter">
     </form>
   <br>
   <input type="file" id="csvFileInput">
@@ -68,12 +72,16 @@
       if(document.getElementById("hformat").value != ""){
         hourFormat = document.getElementById("hformat").value;
       }
+      if(document.getElementById("dformat").value != ""){
+        dateFormat = document.getElementById("dformat").value;
+      }
 
       // Debug
       console.log("Delimiter:", csvSeparator);
       console.log("Headers:", expectedHeaders);
       console.log("Criterium:", math.evaluate(dynamicCriterium));
       console.log("Hour Format:", hourFormat);
+      console.log("Date Format:", dateFormat);
     });
 
     let expectedHeadersArray = expectedHeaders.split(',');
@@ -81,25 +89,19 @@
     document.getElementById("csvFileInput").addEventListener("change", function (e) {
       const file = e.target.files[0];
       if (file) {
+        e.target.value = "";
         Papa.parse(file, {
           delimiter: csvSeparator,
           header: true,
           complete: function (results) {
             jsonData = results.data;
             const csvDataDiv = document.getElementById("csvData");
-            const previousTable = document.getElementById("csvTable");
-            
-            if (previousTable) {
-              previousTable.remove();
-            }
-
             const headersMatch = expectedHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
 
+            csvDataDiv.innerHTML = "";
+
             if (headersMatch) {
-
-              // Limpa qualquer conteúdo anterior
-              csvDataDiv.innerHTML = "";
-
+              console.log(file.name)
               // Crie um elemento de tabela para exibir os dados com Tabulator
               const table = document.createElement("div");
               table.setAttribute("id", "csvTable");
@@ -115,8 +117,7 @@
               });
 
             } else {
-
-              alert("Os cabeçalhos do CSV não correspondem aos esperados. Insira as alterações necessárias");
+              alert("As configurações do Ficheiro não correspondem aos esperados. Insira as alterações necessárias. A tabela anterior será eliminada");
             }
           }
         });
