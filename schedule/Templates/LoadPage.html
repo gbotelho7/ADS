@@ -13,6 +13,7 @@
     let jsonData;
     let csvSeparator = ';';
     let expectedHeaders = "Curso,Unidade de execução,Turno,Turma,Inscritos no turno,Dia da Semana,Início,Fim,Dia,Características da sala pedida para a aula,Sala da aula,Lotação,Características reais da sala";
+    let expectedHeadersArray = expectedHeaders.split(csvSeparator);
     let dynamicCriterium = ""
     let hourFormat = "hh/mm/ss" //TODO Verificar qual o formato da hora default
     let dateFormat = "dd/mm/aaaa"
@@ -40,12 +41,15 @@
     </form>
   <br>
   <input type="file" id="csvFileInput">
+  <input type="text" id="csvRemoteInput">
+  <button id="submitRemoteInput">Submeter URL</button>
   <div id="csvData"></div>
   
 
   <script>
 
     const showFormButton = document.getElementById("show-form-button");
+    const remoteInput = document.getElementById("submitRemoteInput");
     const form = document.getElementById("hidden-form");
 
     //Permite que o botao desapareca e apareca
@@ -57,6 +61,41 @@
       }
     });
 
+    remoteInput.addEventListener("click", () => {
+      const url = remoteInput.value
+      Papa.parse(url, {
+          delimiter: csvSeparator,
+          header: true,
+          complete: function (results) {
+            jsonData = results.data;
+            const csvDataDiv = document.getElementById("csvData");
+            const headersMatch = expectedHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
+            csvDataDiv.innerHTML = "";
+
+            if (headersMatch) {
+              console.log(file.name)
+              // Crie um elemento de tabela para exibir os dados com Tabulator
+              const table = document.createElement("div");
+              table.setAttribute("id", "csvTable");
+              csvDataDiv.appendChild(table);
+
+
+              new Tabulator("#csvTable", {
+                data: jsonData,
+                layout: "fitData",
+                autoColumns: true,
+                pagination: "local",
+                paginationSize: 7,
+              });
+
+            } else {
+              alert("As configurações do Ficheiro não correspondem aos esperados. Insira as alterações necessárias. A tabela anterior será eliminada");
+            }
+          }
+        });
+      
+    });
+
     form.addEventListener("submit", function(event) {
       event.preventDefault(); // Prevent the form from actually submitting
 
@@ -65,6 +104,7 @@
       }
       if(document.getElementById("headers").value != ""){
         expectedHeaders = document.getElementById("headers").value;
+        expectedHeadersArray = expectedHeaders.split(csvSeparator);
       }
       if(document.getElementById("criterium").value != ""){
         dynamicCriterium = document.getElementById("criterium").value;
@@ -84,7 +124,7 @@
       console.log("Date Format:", dateFormat);
     });
 
-    let expectedHeadersArray = expectedHeaders.split(',');
+    
 
     document.getElementById("csvFileInput").addEventListener("change", function (e) {
       const file = e.target.files[0];
@@ -97,7 +137,8 @@
             jsonData = results.data;
             const csvDataDiv = document.getElementById("csvData");
             const headersMatch = expectedHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
-
+            console.log(expectedHeadersArray)
+            console.log(results.meta.fields)
             csvDataDiv.innerHTML = "";
 
             if (headersMatch) {
