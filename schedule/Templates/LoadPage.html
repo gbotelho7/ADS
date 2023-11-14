@@ -12,7 +12,7 @@
   <script>
     let jsonData;
     let csvSeparator = ';';
-    let expectedHeaders = "Curso,Unidade de execução,Turno,Turma,Inscritos no turno,Dia da Semana,Início,Fim,Dia,Características da sala pedida para a aula,Sala da aula,Lotação,Características reais da sala";
+    let expectedHeaders = "Curso;Unidade de execução;Turno;Turma;Inscritos no turno;Dia da Semana;Início;Fim;Dia;Características da sala pedida para a aula;Sala da aula;Lotação;Características reais da sala";
     let expectedHeadersArray = expectedHeaders.split(csvSeparator);
     let dynamicCriterium = ""
     let hourFormat = "hh/mm/ss" //TODO Verificar qual o formato da hora default
@@ -40,7 +40,7 @@
       <input type="submit" value="Submeter">
     </form>
   <br>
-  <input type="file" id="csvFileInput">
+  <input type="file" id="csvFileInput" multiple>
   <input type="text" id="csvRemoteInput">
   <button id="submitRemoteInput">Submeter URL</button>
   <div id="csvData"></div>
@@ -131,29 +131,31 @@
     
 
     document.getElementById("csvFileInput").addEventListener("change", function (e) {
-      const file = e.target.files[0];
-      if (file) {
+      const files = e.target.files;
+      const csvDataDiv = document.getElementById("csvData");
+      csvDataDiv.innerHTML = ""; // Clear previous data
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
         e.target.value = "";
         Papa.parse(file, {
           delimiter: csvSeparator,
           header: true,
           complete: function (results) {
             jsonData = results.data;
-            const csvDataDiv = document.getElementById("csvData");
             const headersMatch = expectedHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
-            /* console.log(expectedHeadersArray)
-            console.log(results.meta.fields) */
-            csvDataDiv.innerHTML = "";
+            console.log(expectedHeadersArray)
+            console.log(results.meta.fields)
 
             if (headersMatch) {
               console.log(file.name)
               // Crie um elemento de tabela para exibir os dados com Tabulator
               const table = document.createElement("div");
-              table.setAttribute("id", "csvTable");
+              table.setAttribute("id", "csvTable" + i);
               csvDataDiv.appendChild(table);
 
 
-              new Tabulator("#csvTable", {
+              new Tabulator("#csvTable" + i, {
                 data: jsonData,
                 layout: "fitData",
                 autoColumns: true,
