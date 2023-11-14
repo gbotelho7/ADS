@@ -49,7 +49,8 @@
   <script>
 
     const showFormButton = document.getElementById("show-form-button");
-    const remoteInput = document.getElementById("submitRemoteInput");
+    const remoteInput = document.getElementById("csvRemoteInput")
+    const remoteInputSubmit = document.getElementById("submitRemoteInput");
     const form = document.getElementById("hidden-form");
 
     //Permite que o botao desapareca e apareca
@@ -61,19 +62,22 @@
       }
     });
 
-    remoteInput.addEventListener("click", () => {
+    remoteInputSubmit.addEventListener("click", () => {
       const url = remoteInput.value
+      console.log(remoteInput.value)
       Papa.parse(url, {
+          download: true,
           delimiter: csvSeparator,
           header: true,
           complete: function (results) {
             jsonData = results.data;
             const csvDataDiv = document.getElementById("csvData");
             const headersMatch = expectedHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
+            /* console.log(expectedHeadersArray)
+            console.log(results.meta.fields) */
             csvDataDiv.innerHTML = "";
 
             if (headersMatch) {
-              console.log(file.name)
               // Crie um elemento de tabela para exibir os dados com Tabulator
               const table = document.createElement("div");
               table.setAttribute("id", "csvTable");
@@ -137,8 +141,8 @@
             jsonData = results.data;
             const csvDataDiv = document.getElementById("csvData");
             const headersMatch = expectedHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
-            console.log(expectedHeadersArray)
-            console.log(results.meta.fields)
+            /* console.log(expectedHeadersArray)
+            console.log(results.meta.fields) */
             csvDataDiv.innerHTML = "";
 
             if (headersMatch) {
