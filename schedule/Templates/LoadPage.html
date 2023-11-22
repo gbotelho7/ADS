@@ -10,20 +10,23 @@
 <body>
   
   <script>
+    const storedData = localStorage.getItem('executionData');
+    console.log(storedData)
     let jsonData;
-    let csvSeparator = ';';
-    let expectedHeaders = "Curso;Unidade de execução;Turno;Turma;Inscritos no turno;Dia da Semana;Início;Fim;Dia;Características da sala pedida para a aula;Sala da aula;Lotação;Características reais da sala";
+    let csvSeparator = storedData.csvSeparator || ';';
+    let expectedHeaders = storedData.expectedHeaders || "Curso;Unidade de execução;Turno;Turma;Inscritos no turno;Dia da Semana;Início;Fim;Dia;Características da sala pedida para a aula;Sala da aula;Lotação;Características reais da sala";
     let expectedHeadersArray = expectedHeaders.split(csvSeparator);
-    let dynamicCriterium = ""
-    let hourFormat = "hh/mm/ss" //TODO Verificar qual o formato da hora default
-    let dateFormat = "dd/mm/aaaa"
+    let dynamicCriterium = storedData.dynamicCriterium || "";
+    let hourFormat = storedData.hourFormat || "hh/mm/ss";
+    let dateFormat = storedData.dateFormat || "dd/mm/aaaa";
 
   </script>
   <button id="show-form-button">Alterar Configurações Ficheiro</button>
     <form id="hidden-form" style="display: none;">
-      <!-- Input fields and submit button go here -->
+      <h4>Estas são as definições atuais, pretende alterar alguma?</h4>
+
       <label for="delimiter">Delimitador:</label>
-      <input type="text" id="delimiter" name="delimiter"><br>
+      <input type="text" id="delimiter" name="delimiter" ><br>
 
       <label for="hformat">Formato hora:</label>
       <input type="text" id="hformat" name="hformat"><br>
@@ -50,6 +53,13 @@
 
   <script>
 
+
+    document.getElementById('delimiter').placeholder = csvSeparator
+    document.getElementById('hformat').placeholder = hourFormat
+    document.getElementById('dformat').placeholder = dateFormat
+    document.getElementById('headers').placeholder = expectedHeaders
+    document.getElementById('criterium').placeholder = dynamicCriterium
+
     const showFormButton = document.getElementById("show-form-button");
     const parseButton = document.getElementById("parseButton");
     const form = document.getElementById("hidden-form");
@@ -63,8 +73,94 @@
       }
     });
 
+    
+    document.addEventListener("input", function (event) {
+      const urlInputs = document.querySelectorAll('.urlInput');
+      const lastInput = urlInputs[urlInputs.length - 1];
+
+      if (event.target === lastInput && lastInput.value.trim() !== '') {
+        const newInput = document.createElement("input");
+        newInput.type = "text";
+        newInput.classList.add("urlInput");
+        newInput.placeholder = "Enter URL";
+        document.getElementById("urlInputs").appendChild(newInput);
+      }
+    });
+
+
+    form.addEventListener("submit", function(event) {
+      event.preventDefault(); // Prevent the form from actually submitting
+
+      if(document.getElementById("delimiter").value != ""){
+        csvSeparator = document.getElementById("delimiter").value;
+        expectedHeadersArray = expectedHeaders.split(csvSeparator);
+      }
+      if(document.getElementById("headers").value != ""){
+        expectedHeaders = document.getElementById("headers").value;
+        expectedHeadersArray = expectedHeaders.split(csvSeparator);
+      }
+      if(document.getElementById("criterium").value != ""){
+        dynamicCriterium = document.getElementById("criterium").value;
+      }
+      if(document.getElementById("hformat").value != ""){
+        hourFormat = document.getElementById("hformat").value;
+      }
+      if(document.getElementById("dformat").value != ""){
+        dateFormat = document.getElementById("dformat").value;
+      }
+
+      // Debug
+      console.log("Delimiter:", csvSeparator);
+      console.log("Headers:", expectedHeaders);
+      console.log("Criterium:", math.evaluate(dynamicCriterium));
+      console.log("Hour Format:", hourFormat);
+      console.log("Date Format:", dateFormat);
+    });
+
+
+    function handleParsedData(results, index, csvDataDiv) {
+      const headersMatch = expectedHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
+      console.log(expectedHeadersArray)
+      console.log(results.meta.fields)
+
+      if (headersMatch) {
+        const table = document.createElement("div");
+        table.setAttribute("id", "csvTable" + index);
+        csvDataDiv.appendChild(table);
+
+        new Tabulator("#csvTable" + index, {
+          data: results.data,
+          layout: "fitData",
+          autoColumns: true,
+          pagination: "local",
+          paginationSize: 7,
+        });
+      } else {
+        alert("As configurações do Ficheiro não correspondem aos esperados. Insira as alterações necessárias. A tabela anterior será eliminada");
+      }
+    }
+
+    document.getElementById("csvFileInput").addEventListener("change", function (e) {
+      const files = e.target.files;
+      const csvDataDiv = document.getElementById("csvData");
+      csvDataDiv.innerHTML = ""; // Clear previous data
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        e.target.value = "";
+        Papa.parse(file, {
+          delimiter: csvSeparator,
+          header: true,
+          complete: function (results) {
+            handleParsedData(results, i, csvDataDiv);
+          }
+        });
+      }
+      saveSettings(csvSeparator, expectedHeaders, dynamicCriterium, hourFormat, dateFormat)
+    });
+
+
     parseButton.addEventListener("click", () => {
-      //const urls = remoteInput.value.split(';');
       const urlInputs = document.querySelectorAll('.urlInput');
       const urls = [];
       const csvDataDiv = document.getElementById("csvData");
@@ -91,114 +187,17 @@
           delimiter: csvSeparator,
           header: true,
           complete: function (results) {
-            const headersMatch = expectedHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
-            if (headersMatch) {
-              // Crie um elemento de tabela para exibir os dados com Tabulator
-              const table = document.createElement("div");
-              table.setAttribute("id", "csvTable" + i);
-              csvDataDiv.appendChild(table);
-
-
-              new Tabulator("#csvTable" + i, {
-                data: results.data,
-                layout: "fitData",
-                autoColumns: true,
-                pagination: "local",
-                paginationSize: 7,
-              });
-
-            } else {
-              alert("As configurações do Ficheiro não correspondem aos esperados. Insira as alterações necessárias. A tabela anterior será eliminada");
-            }
+            handleParsedData(results, i, csvDataDiv);
           }
         });
       }
+      saveSettings(csvSeparator, expectedHeaders, dynamicCriterium, hourFormat, dateFormat)
     };
 
-    document.addEventListener("input", function (event) {
-      const urlInputs = document.querySelectorAll('.urlInput');
-      const lastInput = urlInputs[urlInputs.length - 1];
-
-      if (event.target === lastInput && lastInput.value.trim() !== '') {
-        const newInput = document.createElement("input");
-        newInput.type = "text";
-        newInput.classList.add("urlInput");
-        newInput.placeholder = "Enter URL";
-        document.getElementById("urlInputs").appendChild(newInput);
-      }
-    });
-
-
-    form.addEventListener("submit", function(event) {
-      event.preventDefault(); // Prevent the form from actually submitting
-
-      if(document.getElementById("delimiter").value != ""){
-        csvSeparator = document.getElementById("delimiter").value;
-      }
-      if(document.getElementById("headers").value != ""){
-        expectedHeaders = document.getElementById("headers").value;
-        expectedHeadersArray = expectedHeaders.split(csvSeparator);
-      }
-      if(document.getElementById("criterium").value != ""){
-        dynamicCriterium = document.getElementById("criterium").value;
-      }
-      if(document.getElementById("hformat").value != ""){
-        hourFormat = document.getElementById("hformat").value;
-      }
-      if(document.getElementById("dformat").value != ""){
-        dateFormat = document.getElementById("dformat").value;
-      }
-
-      // Debug
-      console.log("Delimiter:", csvSeparator);
-      console.log("Headers:", expectedHeaders);
-      console.log("Criterium:", math.evaluate(dynamicCriterium));
-      console.log("Hour Format:", hourFormat);
-      console.log("Date Format:", dateFormat);
-    });
-
-    
-
-    document.getElementById("csvFileInput").addEventListener("change", function (e) {
-      const files = e.target.files;
-      const csvDataDiv = document.getElementById("csvData");
-      csvDataDiv.innerHTML = ""; // Clear previous data
-
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        e.target.value = "";
-        Papa.parse(file, {
-          delimiter: csvSeparator,
-          header: true,
-          complete: function (results) {
-            jsonData = results.data;
-            const headersMatch = expectedHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
-            console.log(expectedHeadersArray)
-            console.log(results.meta.fields)
-
-            if (headersMatch) {
-              console.log(file.name)
-              // Crie um elemento de tabela para exibir os dados com Tabulator
-              const table = document.createElement("div");
-              table.setAttribute("id", "csvTable" + i);
-              csvDataDiv.appendChild(table);
-
-
-              new Tabulator("#csvTable" + i, {
-                data: jsonData,
-                layout: "fitData",
-                autoColumns: true,
-                pagination: "local",
-                paginationSize: 7,
-              });
-
-            } else {
-              alert("As configurações do Ficheiro não correspondem aos esperados. Insira as alterações necessárias. A tabela anterior será eliminada");
-            }
-          }
-        });
-      }
-    });
+    function saveSettings(csvSeparator, expectedHeaders, dynamicCriterium, hourFormat, dateFormat){
+      let settings = { "csvSeparator": csvSeparator, "expectedHeaders": expectedHeaders, "dynamicCriterium": dynamicCriterium, "hourFormat": hourFormat, "dateFormat": dateFormat};
+      localStorage.setItem('executionData', JSON.stringify(settings)); 
+    }
   </script>
 </body>
 </html>
