@@ -63,28 +63,28 @@
     });
 
     remoteInputSubmit.addEventListener("click", () => {
-      const url = remoteInput.value
+      const urls = remoteInput.value.split(';');
       console.log(remoteInput.value)
-      Papa.parse(url, {
-          download: true,
+      for (let i = 0; i < urls.length; i++) {
+        const url = urls[i];
+        e.target.value = "";
+        Papa.parse(url, {
           delimiter: csvSeparator,
           header: true,
           complete: function (results) {
             jsonData = results.data;
-            const csvDataDiv = document.getElementById("csvData");
             const headersMatch = expectedHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
-            /* console.log(expectedHeadersArray)
-            console.log(results.meta.fields) */
-            csvDataDiv.innerHTML = "";
+            console.log(expectedHeadersArray)
+            console.log(results.meta.fields)
 
             if (headersMatch) {
               // Crie um elemento de tabela para exibir os dados com Tabulator
               const table = document.createElement("div");
-              table.setAttribute("id", "csvTable");
+              table.setAttribute("id", "csvTable" + i);
               csvDataDiv.appendChild(table);
 
 
-              new Tabulator("#csvTable", {
+              new Tabulator("#csvTable" + i, {
                 data: jsonData,
                 layout: "fitData",
                 autoColumns: true,
@@ -97,8 +97,9 @@
             }
           }
         });
-      
+      }
     });
+
 
     form.addEventListener("submit", function(event) {
       event.preventDefault(); // Prevent the form from actually submitting
