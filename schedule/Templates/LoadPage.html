@@ -2,10 +2,12 @@
 <html>
 <head>
   <title>Carregamento de CSV com Papa Parse e Tabulator</title>
+
   <link href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/5.0.5/css/tabulator.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/5.0.5/js/tabulator.min.js"></script>
   <script src="https://unpkg.com/mathjs@12.0.0/lib/browser/math.js"></script>
+  <script src="../Scripts/functions.js"></script>
 </head>
 <body>
   
@@ -117,29 +119,6 @@
       console.log("Date Format:", dateFormat);
     });
 
-
-    function handleParsedData(results, index, csvDataDiv) {
-      const headersMatch = expectedHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
-      console.log(expectedHeadersArray)
-      console.log(results.meta.fields)
-
-      if (headersMatch) {
-        const table = document.createElement("div");
-        table.setAttribute("id", "csvTable" + index);
-        csvDataDiv.appendChild(table);
-
-        new Tabulator("#csvTable" + index, {
-          data: results.data,
-          layout: "fitData",
-          autoColumns: true,
-          pagination: "local",
-          paginationSize: 7,
-        });
-      } else {
-        alert("As configurações do Ficheiro não correspondem aos esperados. Insira as alterações necessárias. A tabela anterior será eliminada");
-      }
-    }
-
     document.getElementById("csvFileInput").addEventListener("change", function (e) {
       const files = e.target.files;
       const csvDataDiv = document.getElementById("csvData");
@@ -175,29 +154,6 @@
         parseURLs(urls, csvDataDiv);
       }
     });
-
-    function parseURLs(urls, csvDataDiv) {
-      csvDataDiv.innerHTML = ""; // Clear previous data
-
-      for (let i = 0; i < urls.length; i++) {
-        const url = urls[i];
-        //e.target.value = "";
-        Papa.parse(url, {
-          download: true,
-          delimiter: csvSeparator,
-          header: true,
-          complete: function (results) {
-            handleParsedData(results, i, csvDataDiv);
-          }
-        });
-      }
-      saveSettings(csvSeparator, expectedHeaders, dynamicCriterium, hourFormat, dateFormat)
-    };
-
-    function saveSettings(csvSeparator, expectedHeaders, dynamicCriterium, hourFormat, dateFormat){
-      let settings = { "csvSeparator": csvSeparator, "expectedHeaders": expectedHeaders, "dynamicCriterium": dynamicCriterium, "hourFormat": hourFormat, "dateFormat": dateFormat};
-      localStorage.setItem('executionData', JSON.stringify(settings)); 
-    }
   </script>
 </body>
 </html>
