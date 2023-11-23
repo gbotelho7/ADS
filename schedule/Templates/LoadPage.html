@@ -3,6 +3,7 @@
 <head>
   <title>Carregamento de CSV com Papa Parse e Tabulator</title>
 
+  <link rel="stylesheet" type="text/css" href="../Style/styles.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/5.0.5/css/tabulator.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/5.0.5/js/tabulator.min.js"></script>
@@ -23,36 +24,60 @@
     let dateFormat = storedData.dateFormat || "dd/mm/aaaa";
 
   </script>
-  <button id="show-form-button">Alterar Configurações Ficheiro</button>
-    <form id="hidden-form" style="display: none;">
-      <h4>Estas são as definições atuais, pretende alterar alguma?</h4>
-
-      <label for="delimiter">Delimitador:</label>
-      <input type="text" id="delimiter" name="delimiter" ><br>
-
-      <label for="hformat">Formato hora:</label>
-      <input type="text" id="hformat" name="hformat"><br>
-
-      <label for="dformat">Formato data:</label>
-      <input type="text" id="dformat" name="dformat"><br>
-
-      <label for="headers">Cabeçalhos:</label>
-      <input type="text" id="headers" name="headers"><br>
-
-      <label for="criterium">Critério Dinâmico:</label>
-      <input type="text" id="criterium" name="criterium"><br>
-
-      <input type="submit" value="Submeter">
-    </form>
-  <br>
-  <input type="file" id="csvFileInput" multiple>
-  <div id="urlInputs">
-    <input type="text" class="urlInput" placeholder="Enter URL">
-  </div>
-  <button id="parseButton">Submeter URL</button>
-  <div id="csvData"></div>
   
+    <h3>Ficheiro de Salas</h3>
+    <input type="file" id="csvClassroomFileInput" multiple>
+    <br>
+    <div style="display: none" id="after-classrooms">
+      
+      <br>
+      <h3>Ficheiro de Horário</h3>
+      
+      
+      File Input
+      <label class="switch">
+        <input type="checkbox" id="toggleSwitch">
+        <span class="slider"></span>
+      </label>
+      URL Input
+      
+      <br>
+      <br>
+      <input type="file" id="csvScheduleFileInput" style="display: block"; multiple>
+      
+      <div id="csvScheduleUrlInput" style="display: none;">
+        <div id="urlInputs">
+          <input type="text" class="urlInput" placeholder="Enter URL">
+        </div>
+        <button id="parseButton">Submeter URL</button>
+      </div>
 
+      <br>
+      <button id="show-form-button">Alterar Configurações do Ficheiro</button>
+      
+      <form id="hidden-form" style="display: none;">
+        <h4>Estas são as definições atuais, pretende alterar alguma?</h4>
+
+        <label for="delimiter">Delimitador:</label>
+        <input type="text" id="delimiter" name="delimiter" ><br>
+
+        <label for="hformat">Formato hora:</label>
+        <input type="text" id="hformat" name="hformat"><br>
+
+        <label for="dformat">Formato data:</label>
+        <input type="text" id="dformat" name="dformat"><br>
+
+        <label for="headers">Cabeçalhos:</label>
+        <input type="text" id="headers" name="headers"><br>
+
+        <label for="criterium">Critério Dinâmico:</label>
+        <input type="text" id="criterium" name="criterium"><br>
+
+        <input type="submit" value="Submeter">
+      </form>
+    </div>
+    <div id="csvData"></div>
+  
   <script>
 
 
@@ -66,7 +91,14 @@
     const parseButton = document.getElementById("parseButton");
     const form = document.getElementById("hidden-form");
 
-    //Permite que o botao desapareca e apareca
+    const csvFileInput = document.getElementById("csvScheduleFileInput")
+    const csvUrlInput = document.getElementById("csvScheduleUrlInput")
+    const toggleSwitch = document.getElementById('toggleSwitch');
+
+    toggleSwitch.addEventListener('change', function() {
+      handleSwitch(csvFileInput, csvUrlInput);
+    });
+
     showFormButton.addEventListener("click", () => {
       if (form.style.display === "none") {
         form.style.display = "block";
@@ -119,19 +151,39 @@
       console.log("Date Format:", dateFormat);
     });
 
-    document.getElementById("csvFileInput").addEventListener("change", function (e) {
+    document.getElementById("csvScheduleFileInput").addEventListener("change", function (e) {
+      const hiddenDiv = document.getElementById("after-classrooms")
       const files = e.target.files;
       const csvDataDiv = document.getElementById("csvData");
       csvDataDiv.innerHTML = ""; // Clear previous data
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        e.target.value = "";
+        //e.target.value = "";
         Papa.parse(file, {
           delimiter: csvSeparator,
           header: true,
           complete: function (results) {
-            handleParsedData(results, i, csvDataDiv);
+            handleParsedData(results, i, e, csvDataDiv, hiddenDiv, false);
+          }
+        });
+      }
+      saveSettings(csvSeparator, expectedHeaders, dynamicCriterium, hourFormat, dateFormat)
+    });
+
+    document.getElementById("csvClassroomFileInput").addEventListener("change", function (e) {
+      const hiddenDiv = document.getElementById("after-classrooms")
+      const files = e.target.files;
+      const csvDataDiv = document.getElementById("csvData");
+      csvDataDiv.innerHTML = ""; // Clear previous data
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        Papa.parse(file, {
+          delimiter: csvSeparator,
+          header: true,
+          complete: function (results) {
+            handleParsedData(results, i, e, csvDataDiv, hiddenDiv, true);
           }
         });
       }
@@ -143,6 +195,7 @@
       const urlInputs = document.querySelectorAll('.urlInput');
       const urls = [];
       const csvDataDiv = document.getElementById("csvData");
+      const hiddenDiv = document.getElementById("after-classrooms")
 
       urlInputs.forEach(input => {
         if (input.value.trim() !== '') {
@@ -151,7 +204,7 @@
       });
 
       if (urls.length > 0) {
-        parseURLs(urls, csvDataDiv);
+        parseURLs(urls, e,  csvDataDiv, hiddenDiv);
       }
     });
   </script>
