@@ -16,12 +16,12 @@
     const storedData = localStorage.getItem('executionData');
     console.log(storedData)
     let jsonData;
-    let csvSeparator = storedData.csvSeparator || ';';
-    let expectedHeaders = storedData.expectedHeaders || "Curso;Unidade de execução;Turno;Turma;Inscritos no turno;Dia da Semana;Início;Fim;Dia;Características da sala pedida para a aula;Sala da aula;Lotação;Características reais da sala";
-    let expectedHeadersArray = expectedHeaders.split(csvSeparator);
-    let dynamicCriterium = storedData.dynamicCriterium || "";
-    let hourFormat = storedData.hourFormat || "hh/mm/ss";
-    let dateFormat = storedData.dateFormat || "dd/mm/aaaa";
+    window.csvSeparator = storedData.csvSeparator || ';';
+    window.expectedHeaders = storedData.expectedHeaders || "Curso;Unidade de execução;Turno;Turma;Inscritos no turno;Dia da Semana;Início;Fim;Dia;Características da sala pedida para a aula;Sala da aula;Lotação;Características reais da sala";
+    window.expectedHeadersArray = expectedHeaders.split(csvSeparator);
+    window.dynamicCriterium = storedData.dynamicCriterium || ""; //TODO Alterar para a forma de array
+    window.hourFormat = storedData.hourFormat || "hh/mm/ss";
+    window.dateFormat = storedData.dateFormat || "dd/mm/aaaa";
 
   </script>
   
@@ -69,9 +69,11 @@
 
         <label for="headers">Cabeçalhos:</label>
         <input type="text" id="headers" name="headers"><br>
-
-        <label for="criterium">Critério Dinâmico:</label>
-        <input type="text" id="criterium" name="criterium"><br>
+        
+        <div id="criteriumInputs">
+          Dynamic Criterium:
+          <input type="text" class="criteriumInput" placeholder="Enter Criterium">
+        </div>
 
         <input type="submit" value="Submeter">
       </form>
@@ -85,7 +87,6 @@
     document.getElementById('hformat').placeholder = hourFormat
     document.getElementById('dformat').placeholder = dateFormat
     document.getElementById('headers').placeholder = expectedHeaders
-    document.getElementById('criterium').placeholder = dynamicCriterium
 
     const showFormButton = document.getElementById("show-form-button");
     const parseButton = document.getElementById("parseButton");
@@ -107,46 +108,38 @@
       }
     });
 
-    
     document.addEventListener("input", function (event) {
-      const urlInputs = document.querySelectorAll('.urlInput');
-      const lastInput = urlInputs[urlInputs.length - 1];
+      addNewInput('urlInput', 'Enter URL', 'urlInputs');
+    });
 
-      if (event.target === lastInput && lastInput.value.trim() !== '') {
-        const newInput = document.createElement("input");
-        newInput.type = "text";
-        newInput.classList.add("urlInput");
-        newInput.placeholder = "Enter URL";
-        document.getElementById("urlInputs").appendChild(newInput);
-      }
+    form.addEventListener("input", function (event) {
+      addNewInput('criteriumInput', 'Enter Criterium', 'criteriumInputs');
     });
 
 
     form.addEventListener("submit", function(event) {
       event.preventDefault(); // Prevent the form from actually submitting
 
-      if(document.getElementById("delimiter").value != ""){
-        csvSeparator = document.getElementById("delimiter").value;
-        expectedHeadersArray = expectedHeaders.split(csvSeparator);
-      }
-      if(document.getElementById("headers").value != ""){
-        expectedHeaders = document.getElementById("headers").value;
-        expectedHeadersArray = expectedHeaders.split(csvSeparator);
-      }
-      if(document.getElementById("criterium").value != ""){
-        dynamicCriterium = document.getElementById("criterium").value;
-      }
-      if(document.getElementById("hformat").value != ""){
-        hourFormat = document.getElementById("hformat").value;
-      }
-      if(document.getElementById("dformat").value != ""){
-        dateFormat = document.getElementById("dformat").value;
-      }
+      handleInputChange("delimiter", "csvSeparator", () => { expectedHeadersArray = expectedHeaders.split(csvSeparator); });
+
+      handleInputChange("headers", "expectedHeaders", () => { expectedHeadersArray = expectedHeaders.split(csvSeparator); });
+
+      handleInputChange("hformat", "hourFormat");
+      handleInputChange("dformat", "dateFormat");
+
+      const criteriumInputs = [];
+      const inputValues = document.querySelectorAll('.criteriumInput');
+      inputValues.forEach(input => {
+        if(input.value.trim() !== ""){
+          criteriumInputs.push(input.value.trim());
+        }
+      });
+
 
       // Debug
       console.log("Delimiter:", csvSeparator);
-      console.log("Headers:", expectedHeaders);
-      console.log("Criterium:", math.evaluate(dynamicCriterium));
+      console.log("Headers:", expectedHeadersArray);
+      console.log("Criterium:", criteriumInputs);
       console.log("Hour Format:", hourFormat);
       console.log("Date Format:", dateFormat);
     });
@@ -159,7 +152,6 @@
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        //e.target.value = "";
         Papa.parse(file, {
           delimiter: csvSeparator,
           header: true,
@@ -191,7 +183,7 @@
     });
 
 
-    parseButton.addEventListener("click", () => {
+    parseButton.addEventListener("click", (e) => {
       const urlInputs = document.querySelectorAll('.urlInput');
       const urls = [];
       const csvDataDiv = document.getElementById("csvData");

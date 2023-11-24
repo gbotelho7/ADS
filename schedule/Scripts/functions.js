@@ -75,3 +75,26 @@ function handleSwitch(csvFileInput, csvUrlInput) {
     csvUrlInput.style.display = "none"
   }
 }
+
+function addNewInput(className, placeholderText, containerId) {
+  const inputs = document.querySelectorAll(`.${className}`);
+  const lastInput = inputs[inputs.length - 1];
+
+  if (lastInput && event.target === lastInput && lastInput.value.trim() !== '') {
+    const newInput = document.createElement("input");
+    newInput.type = "text";
+    newInput.classList.add(className);
+    newInput.placeholder = placeholderText;
+    document.getElementById(containerId).appendChild(newInput);
+  }
+}
+
+function handleInputChange(elementId, variableToUpdate, action = null) {
+  const element = document.getElementById(elementId);
+  if (element && element.value !== "") {
+    window[variableToUpdate] = element.value;
+    if (action !== null) {
+      action();
+    }
+  }
+}
