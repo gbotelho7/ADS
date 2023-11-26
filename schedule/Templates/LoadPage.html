@@ -8,7 +8,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/5.0.5/js/tabulator.min.js"></script>
   <script src="https://unpkg.com/mathjs@12.0.0/lib/browser/math.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
   <script src="../Scripts/functions.js"></script>
+
 </head>
 <body>
   
@@ -20,8 +22,10 @@
     window.expectedHeaders = storedData.expectedHeaders || "Curso;Unidade de execução;Turno;Turma;Inscritos no turno;Dia da Semana;Início;Fim;Dia;Características da sala pedida para a aula;Sala da aula;Lotação;Características reais da sala";
     window.expectedHeadersArray = expectedHeaders.split(csvSeparator);
     window.dynamicCriterium = storedData.dynamicCriterium || ""; //TODO Alterar para a forma de array
-    window.hourFormat = storedData.hourFormat || "hh/mm/ss";
-    window.dateFormat = storedData.dateFormat || "dd/mm/aaaa";
+    window.hourFormat = storedData.hourFormat || "HH:mm:ss";
+    window.dateFormat = storedData.dateFormat || "DD/MM/YYYY";
+    window.dateColumns = storedData.dateColumns || 'Dia'
+    window.hourColumns = storedData.hourColumns || 'Início;Fim' 
 
   </script>
   
@@ -69,6 +73,12 @@
 
         <label for="headers">Cabeçalhos:</label>
         <input type="text" id="headers" name="headers"><br>
+
+        <label for="headers">Cabeçalhos Horas:</label>
+        <input type="text" id="headerh" name="headerh"><br>
+
+        <label for="headers">Cabeçalhos Datas:</label>
+        <input type="text" id="headerd" name="headerd"><br>
         
         <div id="criteriumInputs">
           Dynamic Criterium:
@@ -82,12 +92,6 @@
   
   <script>
 
-
-    document.getElementById('delimiter').placeholder = csvSeparator
-    document.getElementById('hformat').placeholder = hourFormat
-    document.getElementById('dformat').placeholder = dateFormat
-    document.getElementById('headers').placeholder = expectedHeaders
-
     const showFormButton = document.getElementById("show-form-button");
     const parseButton = document.getElementById("parseButton");
     const form = document.getElementById("hidden-form");
@@ -96,6 +100,11 @@
     const csvUrlInput = document.getElementById("csvScheduleUrlInput")
     const toggleSwitch = document.getElementById('toggleSwitch');
 
+    const csvDataDiv = document.getElementById("csvData");
+    const hiddenDiv = document.getElementById("after-classrooms")
+
+    settingsToValue(['delimiter', 'hformat', 'dformat', 'headers', 'headerh', 'headerd'])
+    
     toggleSwitch.addEventListener('change', function() {
       handleSwitch(csvFileInput, csvUrlInput);
     });
@@ -126,6 +135,8 @@
 
       handleInputChange("hformat", "hourFormat");
       handleInputChange("dformat", "dateFormat");
+      handleInputChange("headerh", "hourColumns");
+      handleInputChange("headerd", "dateColumns");
 
       const criteriumInputs = [];
       const inputValues = document.querySelectorAll('.criteriumInput');
@@ -135,19 +146,18 @@
         }
       });
 
-
       // Debug
       console.log("Delimiter:", csvSeparator);
       console.log("Headers:", expectedHeadersArray);
       console.log("Criterium:", criteriumInputs);
       console.log("Hour Format:", hourFormat);
       console.log("Date Format:", dateFormat);
+      console.log("Hour Header:", hourColumns);
+      console.log("Date Header:", dateColumns);
     });
 
     document.getElementById("csvScheduleFileInput").addEventListener("change", function (e) {
-      const hiddenDiv = document.getElementById("after-classrooms")
       const files = e.target.files;
-      const csvDataDiv = document.getElementById("csvData");
       csvDataDiv.innerHTML = ""; // Clear previous data
 
       for (let i = 0; i < files.length; i++) {
@@ -160,13 +170,11 @@
           }
         });
       }
-      saveSettings(csvSeparator, expectedHeaders, dynamicCriterium, hourFormat, dateFormat)
+      saveSettings()
     });
 
     document.getElementById("csvClassroomFileInput").addEventListener("change", function (e) {
-      const hiddenDiv = document.getElementById("after-classrooms")
       const files = e.target.files;
-      const csvDataDiv = document.getElementById("csvData");
       csvDataDiv.innerHTML = ""; // Clear previous data
 
       for (let i = 0; i < files.length; i++) {
@@ -179,15 +187,13 @@
           }
         });
       }
-      saveSettings(csvSeparator, expectedHeaders, dynamicCriterium, hourFormat, dateFormat)
+      saveSettings()
     });
 
 
     parseButton.addEventListener("click", (e) => {
       const urlInputs = document.querySelectorAll('.urlInput');
       const urls = [];
-      const csvDataDiv = document.getElementById("csvData");
-      const hiddenDiv = document.getElementById("after-classrooms")
 
       urlInputs.forEach(input => {
         if (input.value.trim() !== '') {

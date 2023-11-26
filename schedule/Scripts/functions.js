@@ -17,10 +17,19 @@ function handleParsedData(results, index, e, csvDataDiv, hiddenDiv, classroomsIn
   else{
     headersMatch = expectedHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
   }
-  console.log(expectedHeadersArray)
-  console.log(results.meta.fields)
 
-  if (headersMatch) {
+
+  const dateFormatsMatch = dateColumns.split(";").every((column) =>
+    results.meta.fields.includes(column) &&
+    results.data.every(row =>  (moment(row[column], dateFormat, true).isValid() || row[column]=== '') )   //every moment(row[column], dateFormat, true).isValid()
+  );
+
+  const timeFormatsMatch = hourColumns.split(";").every((column) =>
+    results.meta.fields.includes(column) &&
+    results.data.every(row => (moment(row[column], hourFormat, true).isValid() || row[column]=== '')) //every moment(row[column], hourFormat, true).isValid()
+  );
+
+  if ((headersMatch && dateFormatsMatch && timeFormatsMatch) || (headersMatch && classroomsInput)) {
     if(hiddenDiv.style.display === "none"){
       hiddenDiv.style.display = "block"
     }
@@ -61,8 +70,8 @@ function parseURLs(urls, e, csvDataDiv, hiddenDiv) {
   saveSettings(csvSeparator, expectedHeaders, dynamicCriterium, hourFormat, dateFormat)
 };
 
-function saveSettings(csvSeparator, expectedHeaders, dynamicCriterium, hourFormat, dateFormat){
-  let settings = { "csvSeparator": csvSeparator, "expectedHeaders": expectedHeaders, "dynamicCriterium": dynamicCriterium, "hourFormat": hourFormat, "dateFormat": dateFormat};
+function saveSettings(){
+  let settings = { "csvSeparator": csvSeparator, "expectedHeaders": expectedHeaders, "dynamicCriterium": dynamicCriterium, "hourFormat": hourFormat, "dateFormat": dateFormat, "dateColumns": dateColumns, "hourColumns": hourColumns};
   localStorage.setItem('executionData', JSON.stringify(settings)); 
 }
 
@@ -96,5 +105,12 @@ function handleInputChange(elementId, variableToUpdate, action = null) {
     if (action !== null) {
       action();
     }
+  }
+}
+
+function settingsToValue(listIds){
+  settings = [csvSeparator, hourFormat, dateFormat, expectedHeaders, hourColumns, dateColumns]
+  for(let i = 0; i < listIds.length; i++){
+    document.getElementById(listIds[i]).value = settings[i]
   }
 }
