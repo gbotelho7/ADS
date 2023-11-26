@@ -49,7 +49,13 @@ function handleParsedData(results, index, e, csvDataDiv, hiddenDiv, classroomsIn
       hiddenDiv.style.display = "none"
     }
     e.target.value = "";
-    alert("As configurações do Ficheiro não correspondem aos esperados. Insira as alterações necessárias. A tabela anterior será eliminada");
+    if(!headersMatch){
+      alert("Os cabeçalhos das configurações não correspondem aos do Ficheiro. Certifique-se de que o cabeçalho e o delimitador estão corretos. A tabela anterior será eliminada");
+    } else if(!dateFormatsMatch){
+      alert("O formato da data das configurações não corresponde ao encontrado no Ficheiro. Insira as alterações necessárias. A tabela anterior será eliminada");
+    } else if(!timeFormatsMatch){
+      alert("O formato de hora das configurações não corresponde ao encontrado no Ficheiro. Insira as alterações necessárias. A tabela anterior será eliminada");
+    }
   }
 };
 
