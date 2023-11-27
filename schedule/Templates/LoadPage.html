@@ -2,10 +2,15 @@
 <html>
 <head>
   <title>Carregamento de CSV com Papa Parse e Tabulator</title>
+
+  <link rel="stylesheet" type="text/css" href="../Style/styles.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/5.0.5/css/tabulator.min.css" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/5.0.5/js/tabulator.min.js"></script>
   <script src="https://unpkg.com/mathjs@12.0.0/lib/browser/math.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <script src="../Scripts/functions.js"></script>
+
 </head>
 <body>
   
@@ -13,58 +18,97 @@
     const storedData = localStorage.getItem('executionData');
     console.log(storedData)
     let jsonData;
-    let csvSeparator = storedData.csvSeparator || ';';
-    let expectedHeaders = storedData.expectedHeaders || "Curso;Unidade de execução;Turno;Turma;Inscritos no turno;Dia da Semana;Início;Fim;Dia;Características da sala pedida para a aula;Sala da aula;Lotação;Características reais da sala";
-    let expectedHeadersArray = expectedHeaders.split(csvSeparator);
-    let dynamicCriterium = storedData.dynamicCriterium || "";
-    let hourFormat = storedData.hourFormat || "hh/mm/ss";
-    let dateFormat = storedData.dateFormat || "dd/mm/aaaa";
+    window.csvSeparator = storedData.csvSeparator || ';';
+    window.expectedHeaders = storedData.expectedHeaders || "Curso;Unidade de execução;Turno;Turma;Inscritos no turno;Dia da Semana;Início;Fim;Dia;Características da sala pedida para a aula;Sala da aula;Lotação;Características reais da sala";
+    window.expectedHeadersArray = expectedHeaders.split(csvSeparator);
+    window.dynamicCriterium = storedData.dynamicCriterium || ""; //TODO Alterar para a forma de array
+    window.hourFormat = storedData.hourFormat || "HH:mm:ss";
+    window.dateFormat = storedData.dateFormat || "DD/MM/YYYY";
+    window.dateColumns = storedData.dateColumns || 'Dia'
+    window.hourColumns = storedData.hourColumns || 'Início;Fim' 
 
   </script>
-  <button id="show-form-button">Alterar Configurações Ficheiro</button>
-    <form id="hidden-form" style="display: none;">
-      <h4>Estas são as definições atuais, pretende alterar alguma?</h4>
-
-      <label for="delimiter">Delimitador:</label>
-      <input type="text" id="delimiter" name="delimiter" ><br>
-
-      <label for="hformat">Formato hora:</label>
-      <input type="text" id="hformat" name="hformat"><br>
-
-      <label for="dformat">Formato data:</label>
-      <input type="text" id="dformat" name="dformat"><br>
-
-      <label for="headers">Cabeçalhos:</label>
-      <input type="text" id="headers" name="headers"><br>
-
-      <label for="criterium">Critério Dinâmico:</label>
-      <input type="text" id="criterium" name="criterium"><br>
-
-      <input type="submit" value="Submeter">
-    </form>
-  <br>
-  <input type="file" id="csvFileInput" multiple>
-  <div id="urlInputs">
-    <input type="text" class="urlInput" placeholder="Enter URL">
-  </div>
-  <button id="parseButton">Submeter URL</button>
-  <div id="csvData"></div>
   
+    <h3>Ficheiro de Salas</h3>
+    <input type="file" id="csvClassroomFileInput" multiple>
+    <br>
+    <div style="display: none" id="after-classrooms">
+      
+      <br>
+      <h3>Ficheiro de Horário</h3>
+      
+      
+      File Input
+      <label class="switch">
+        <input type="checkbox" id="toggleSwitch">
+        <span class="slider"></span>
+      </label>
+      URL Input
+      
+      <br>
+      <br>
+      <input type="file" id="csvScheduleFileInput" style="display: block"; multiple>
+      
+      <div id="csvScheduleUrlInput" style="display: none;">
+        <div id="urlInputs">
+          <input type="text" class="urlInput" placeholder="Enter URL">
+        </div>
+        <button id="parseButton">Submeter URL</button>
+      </div>
 
+      <br>
+      <button id="show-form-button">Alterar Configurações do Ficheiro</button>
+      
+      <form id="hidden-form" style="display: none;">
+        <h4>Estas são as definições atuais, pretende alterar alguma?</h4>
+
+        <label for="delimiter">Delimitador:</label>
+        <input type="text" id="delimiter" name="delimiter" ><br>
+
+        <label for="hformat">Formato hora:</label>
+        <input type="text" id="hformat" name="hformat"><br>
+
+        <label for="dformat">Formato data:</label>
+        <input type="text" id="dformat" name="dformat"><br>
+
+        <label for="headers">Cabeçalhos:</label>
+        <input type="text" id="headers" name="headers"><br>
+
+        <label for="headers">Cabeçalhos Horas:</label>
+        <input type="text" id="headerh" name="headerh"><br>
+
+        <label for="headers">Cabeçalhos Datas:</label>
+        <input type="text" id="headerd" name="headerd"><br>
+        
+        <div id="criteriumInputs">
+          Dynamic Criterium:
+          <input type="text" class="criteriumInput" placeholder="Enter Criterium">
+        </div>
+
+        <input type="submit" value="Submeter">
+      </form>
+    </div>
+    <div id="csvData"></div>
+  
   <script>
-
-
-    document.getElementById('delimiter').placeholder = csvSeparator
-    document.getElementById('hformat').placeholder = hourFormat
-    document.getElementById('dformat').placeholder = dateFormat
-    document.getElementById('headers').placeholder = expectedHeaders
-    document.getElementById('criterium').placeholder = dynamicCriterium
 
     const showFormButton = document.getElementById("show-form-button");
     const parseButton = document.getElementById("parseButton");
     const form = document.getElementById("hidden-form");
 
-    //Permite que o botao desapareca e apareca
+    const csvFileInput = document.getElementById("csvScheduleFileInput")
+    const csvUrlInput = document.getElementById("csvScheduleUrlInput")
+    const toggleSwitch = document.getElementById('toggleSwitch');
+
+    const csvDataDiv = document.getElementById("csvData");
+    const hiddenDiv = document.getElementById("after-classrooms")
+
+    settingsToValue(['delimiter', 'hformat', 'dformat', 'headers', 'headerh', 'headerd'])
+    
+    toggleSwitch.addEventListener('change', function() {
+      handleSwitch(csvFileInput, csvUrlInput);
+    });
+
     showFormButton.addEventListener("click", () => {
       if (form.style.display === "none") {
         form.style.display = "block";
@@ -73,97 +117,83 @@
       }
     });
 
-    
     document.addEventListener("input", function (event) {
-      const urlInputs = document.querySelectorAll('.urlInput');
-      const lastInput = urlInputs[urlInputs.length - 1];
+      addNewInput('urlInput', 'Enter URL', 'urlInputs');
+    });
 
-      if (event.target === lastInput && lastInput.value.trim() !== '') {
-        const newInput = document.createElement("input");
-        newInput.type = "text";
-        newInput.classList.add("urlInput");
-        newInput.placeholder = "Enter URL";
-        document.getElementById("urlInputs").appendChild(newInput);
-      }
+    form.addEventListener("input", function (event) {
+      addNewInput('criteriumInput', 'Enter Criterium', 'criteriumInputs');
     });
 
 
     form.addEventListener("submit", function(event) {
       event.preventDefault(); // Prevent the form from actually submitting
 
-      if(document.getElementById("delimiter").value != ""){
-        csvSeparator = document.getElementById("delimiter").value;
-        expectedHeadersArray = expectedHeaders.split(csvSeparator);
-      }
-      if(document.getElementById("headers").value != ""){
-        expectedHeaders = document.getElementById("headers").value;
-        expectedHeadersArray = expectedHeaders.split(csvSeparator);
-      }
-      if(document.getElementById("criterium").value != ""){
-        dynamicCriterium = document.getElementById("criterium").value;
-      }
-      if(document.getElementById("hformat").value != ""){
-        hourFormat = document.getElementById("hformat").value;
-      }
-      if(document.getElementById("dformat").value != ""){
-        dateFormat = document.getElementById("dformat").value;
-      }
+      handleInputChange("delimiter", "csvSeparator", () => { expectedHeadersArray = expectedHeaders.split(csvSeparator); });
+
+      handleInputChange("headers", "expectedHeaders", () => { expectedHeadersArray = expectedHeaders.split(csvSeparator); });
+
+      handleInputChange("hformat", "hourFormat");
+      handleInputChange("dformat", "dateFormat");
+      handleInputChange("headerh", "hourColumns");
+      handleInputChange("headerd", "dateColumns");
+
+      const criteriumInputs = [];
+      const inputValues = document.querySelectorAll('.criteriumInput');
+      inputValues.forEach(input => {
+        if(input.value.trim() !== ""){
+          criteriumInputs.push(input.value.trim());
+        }
+      });
 
       // Debug
       console.log("Delimiter:", csvSeparator);
-      console.log("Headers:", expectedHeaders);
-      console.log("Criterium:", math.evaluate(dynamicCriterium));
+      console.log("Headers:", expectedHeadersArray);
+      console.log("Criterium:", criteriumInputs);
       console.log("Hour Format:", hourFormat);
       console.log("Date Format:", dateFormat);
+      console.log("Hour Header:", hourColumns);
+      console.log("Date Header:", dateColumns);
     });
 
-
-    function handleParsedData(results, index, csvDataDiv) {
-      const headersMatch = expectedHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
-      console.log(expectedHeadersArray)
-      console.log(results.meta.fields)
-
-      if (headersMatch) {
-        const table = document.createElement("div");
-        table.setAttribute("id", "csvTable" + index);
-        csvDataDiv.appendChild(table);
-
-        new Tabulator("#csvTable" + index, {
-          data: results.data,
-          layout: "fitData",
-          autoColumns: true,
-          pagination: "local",
-          paginationSize: 7,
-        });
-      } else {
-        alert("As configurações do Ficheiro não correspondem aos esperados. Insira as alterações necessárias. A tabela anterior será eliminada");
-      }
-    }
-
-    document.getElementById("csvFileInput").addEventListener("change", function (e) {
+    document.getElementById("csvScheduleFileInput").addEventListener("change", function (e) {
       const files = e.target.files;
-      const csvDataDiv = document.getElementById("csvData");
       csvDataDiv.innerHTML = ""; // Clear previous data
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        e.target.value = "";
         Papa.parse(file, {
           delimiter: csvSeparator,
           header: true,
           complete: function (results) {
-            handleParsedData(results, i, csvDataDiv);
+            handleParsedData(results, i, e, csvDataDiv, hiddenDiv, false);
           }
         });
       }
-      saveSettings(csvSeparator, expectedHeaders, dynamicCriterium, hourFormat, dateFormat)
+      saveSettings()
+    });
+
+    document.getElementById("csvClassroomFileInput").addEventListener("change", function (e) {
+      const files = e.target.files;
+      csvDataDiv.innerHTML = ""; // Clear previous data
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        Papa.parse(file, {
+          delimiter: csvSeparator,
+          header: true,
+          complete: function (results) {
+            handleParsedData(results, i, e, csvDataDiv, hiddenDiv, true);
+          }
+        });
+      }
+      saveSettings()
     });
 
 
-    parseButton.addEventListener("click", () => {
+    parseButton.addEventListener("click", (e) => {
       const urlInputs = document.querySelectorAll('.urlInput');
       const urls = [];
-      const csvDataDiv = document.getElementById("csvData");
 
       urlInputs.forEach(input => {
         if (input.value.trim() !== '') {
@@ -172,32 +202,9 @@
       });
 
       if (urls.length > 0) {
-        parseURLs(urls, csvDataDiv);
+        parseURLs(urls, e,  csvDataDiv, hiddenDiv);
       }
     });
-
-    function parseURLs(urls, csvDataDiv) {
-      csvDataDiv.innerHTML = ""; // Clear previous data
-
-      for (let i = 0; i < urls.length; i++) {
-        const url = urls[i];
-        //e.target.value = "";
-        Papa.parse(url, {
-          download: true,
-          delimiter: csvSeparator,
-          header: true,
-          complete: function (results) {
-            handleParsedData(results, i, csvDataDiv);
-          }
-        });
-      }
-      saveSettings(csvSeparator, expectedHeaders, dynamicCriterium, hourFormat, dateFormat)
-    };
-
-    function saveSettings(csvSeparator, expectedHeaders, dynamicCriterium, hourFormat, dateFormat){
-      let settings = { "csvSeparator": csvSeparator, "expectedHeaders": expectedHeaders, "dynamicCriterium": dynamicCriterium, "hourFormat": hourFormat, "dateFormat": dateFormat};
-      localStorage.setItem('executionData', JSON.stringify(settings)); 
-    }
   </script>
 </body>
 </html>
