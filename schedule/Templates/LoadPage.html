@@ -17,15 +17,18 @@
   <script>
     const storedData = localStorage.getItem('executionData');
     console.log(storedData)
+    const parsedData = storedData ? JSON.parse(storedData) : {};
+    window.defaultHeadersArray = "Curso;Unidade de execução;Turno;Turma;Inscritos no turno;Dia da Semana;Início;Fim;Dia;Características da sala pedida para a aula;Sala da aula;Lotação;Características reais da sala".split(";");
+
     let jsonData;
-    window.csvSeparator = storedData.csvSeparator || ';';
-    window.expectedHeaders = storedData.expectedHeaders || "Curso;Unidade de execução;Turno;Turma;Inscritos no turno;Dia da Semana;Início;Fim;Dia;Características da sala pedida para a aula;Sala da aula;Lotação;Características reais da sala";
-    window.expectedHeadersArray = expectedHeaders.split(csvSeparator);
-    window.dynamicCriterium = storedData.dynamicCriterium || ""; //TODO Alterar para a forma de array
-    window.hourFormat = storedData.hourFormat || "HH:mm:ss";
-    window.dateFormat = storedData.dateFormat || "DD/MM/YYYY";
-    window.dateColumns = storedData.dateColumns || 'Dia'
-    window.hourColumns = storedData.hourColumns || 'Início;Fim' 
+    window.dictionary = parsedData.dictionary || {}; //TODO Adicionar os seus valores aos inputs
+    window.csvSeparator = parsedData.csvSeparator || ';';
+    window.dynamicCriterium = parsedData.dynamicCriterium || ""; //TODO Alterar para a forma de array
+    window.hourFormat = parsedData.hourFormat || "HH:mm:ss";
+    window.dateFormat = parsedData.dateFormat || "DD/MM/YYYY";
+    window.dateColumns = parsedData.dateColumns || 'Dia'
+    window.hourColumns = parsedData.hourColumns || 'Início;Fim' 
+    
 
   </script>
   
@@ -37,7 +40,6 @@
       <br>
       <h3>Ficheiro de Horário</h3>
       
-      
       File Input
       <label class="switch">
         <input type="checkbox" id="toggleSwitch">
@@ -45,8 +47,7 @@
       </label>
       URL Input
       
-      <br>
-      <br>
+      <br><br>
       <input type="file" id="csvScheduleFileInput" style="display: block"; multiple>
       
       <div id="csvScheduleUrlInput" style="display: none;">
@@ -71,13 +72,42 @@
         <label for="dformat">Formato data:</label>
         <input type="text" id="dformat" name="dformat"><br>
 
-        <label for="headers">Cabeçalhos:</label>
-        <input type="text" id="headers" name="headers"><br>
+        <div id="headers">
+          <br>
+          <strong>Faça a correspondência entre os seus cabeçalhos e os nossos:</strong>
+          <br>
+          Curso: <input type="text" id="header-curso">
+          <br>
+          Unidade de execução: <input type="text" id="header-unidade">
+          <br>
+          Turno: <input type="text" id="header-turno">
+          <br>
+          Turma: <input type="text" id="header-turma">
+          <br>
+          Inscritos no turno: <input type="text" id="header-inscritos">
+          <br>
+          Dia da Semana: <input type="text" id="header-dia-semana">
+          <br>
+          Início: <input type="text" id="header-inicio">
+          <br>
+          Fim: <input type="text" id="header-fim">
+          <br>
+          Dia: <input type="text" id="header-dia">
+          <br>
+          Características da sala pedida para a aula: <input type="text" id="header-caracteristicas-pedidas">
+          <br>
+          Sala da aula: <input type="text" id="header-sala">
+          <br>
+          Lotação: <input type="text" id="header-lotacao">
+          <br>
+          Características reais da sala: <input type="text" id="header-caracteristicas-reais">
+          <br><br>
+        </div>
 
-        <label for="headers">Cabeçalhos Horas:</label>
+        <label for="headerh">Cabeçalhos Horas:</label>
         <input type="text" id="headerh" name="headerh"><br>
 
-        <label for="headers">Cabeçalhos Datas:</label>
+        <label for="headerd">Cabeçalhos Datas:</label>
         <input type="text" id="headerd" name="headerd"><br>
         
         <div id="criteriumInputs">
@@ -102,9 +132,12 @@
 
     const csvDataDiv = document.getElementById("csvData");
     const hiddenDiv = document.getElementById("after-classrooms")
+    const inputsHeaders = document.querySelectorAll('#headers input[type="text"]');
 
-    settingsToValue(['delimiter', 'hformat', 'dformat', 'headers', 'headerh', 'headerd'])
+    //settingsToValue(['delimiter', 'hformat', 'dformat', 'headerh', 'headerd'], inputsHeaders) //TODO Adicionar aqui os valores do dicionário
     
+    settingsToValue([...['delimiter', 'hformat', 'dformat', 'headerh', 'headerd'], ...Array.from(inputsHeaders).map(input => input.id)])
+
     toggleSwitch.addEventListener('change', function() {
       handleSwitch(csvFileInput, csvUrlInput);
     });
@@ -125,14 +158,11 @@
       addNewInput('criteriumInput', 'Enter Criterium', 'criteriumInputs');
     });
 
-
+    
     form.addEventListener("submit", function(event) {
       event.preventDefault(); // Prevent the form from actually submitting
 
-      handleInputChange("delimiter", "csvSeparator", () => { expectedHeadersArray = expectedHeaders.split(csvSeparator); });
-
-      handleInputChange("headers", "expectedHeaders", () => { expectedHeadersArray = expectedHeaders.split(csvSeparator); });
-
+      handleInputChange("delimiter", "csvSeparator");
       handleInputChange("hformat", "hourFormat");
       handleInputChange("dformat", "dateFormat");
       handleInputChange("headerh", "hourColumns");
@@ -146,14 +176,11 @@
         }
       });
 
-      // Debug
-      console.log("Delimiter:", csvSeparator);
-      console.log("Headers:", expectedHeadersArray);
-      console.log("Criterium:", criteriumInputs);
-      console.log("Hour Format:", hourFormat);
-      console.log("Date Format:", dateFormat);
-      console.log("Hour Header:", hourColumns);
-      console.log("Date Header:", dateColumns);
+      let i = 0;
+      inputsHeaders.forEach(input => {
+        dictionary[defaultHeadersArray[i]] = input.value;
+        i++;
+      });
     });
 
     document.getElementById("csvScheduleFileInput").addEventListener("change", function (e) {
@@ -200,7 +227,6 @@
           urls.push(input.value.trim());
         }
       });
-
       if (urls.length > 0) {
         parseURLs(urls, e,  csvDataDiv, hiddenDiv);
       }

@@ -1,6 +1,7 @@
 
 function handleParsedData(results, index, e, csvDataDiv, hiddenDiv, classroomsInput) {
-  let headersMatch;
+  let headersMatch = false;
+  console.log(dictionary)
   if(classroomsInput){
     const dataArray = [
       'Edifício', 'Nome sala', 'Capacidade Normal', 'Capacidade Exame', 'Nº características',
@@ -14,10 +15,15 @@ function handleParsedData(results, index, e, csvDataDiv, hiddenDiv, classroomsIn
     ];
     headersMatch = dataArray.every((header) => results.meta.fields.includes(header.trim()));
   }
-  else{
-    headersMatch = expectedHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
+  else if(Object.keys(dictionary).length === 0 && !classroomsInput){
+    headersMatch = defaultHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
+  } else {
+    headersMatch = Object.values(dictionary).every((header) => results.meta.fields.includes(header.trim()));
+    console.log(Object.values(dictionary))
+    console.log(results.meta.fields)
+    console.log(headersMatch)
   }
-
+  console.log(headersMatch)
 
   const dateFormatsMatch = dateColumns.split(";").every((column) =>
     results.meta.fields.includes(column) &&
@@ -73,11 +79,11 @@ function parseURLs(urls, e, csvDataDiv, hiddenDiv) {
       }
     });
   }
-  saveSettings(csvSeparator, expectedHeaders, dynamicCriterium, hourFormat, dateFormat)
+  saveSettings()
 };
 
 function saveSettings(){
-  let settings = { "csvSeparator": csvSeparator, "expectedHeaders": expectedHeaders, "dynamicCriterium": dynamicCriterium, "hourFormat": hourFormat, "dateFormat": dateFormat, "dateColumns": dateColumns, "hourColumns": hourColumns};
+  let settings = { "csvSeparator": csvSeparator, "dynamicCriterium": dynamicCriterium, "hourFormat": hourFormat, "dateFormat": dateFormat, "dateColumns": dateColumns, "hourColumns": hourColumns, "dictionary": dictionary};
   localStorage.setItem('executionData', JSON.stringify(settings)); 
 }
 
@@ -104,19 +110,20 @@ function addNewInput(className, placeholderText, containerId) {
   }
 }
 
-function handleInputChange(elementId, variableToUpdate, action = null) {
+function handleInputChange(elementId, variableToUpdate) {
   const element = document.getElementById(elementId);
   if (element && element.value !== "") {
     window[variableToUpdate] = element.value;
-    if (action !== null) {
-      action();
-    }
   }
 }
 
-function settingsToValue(listIds){
-  settings = [csvSeparator, hourFormat, dateFormat, expectedHeaders, hourColumns, dateColumns]
+function settingsToValue(listIds){ 
+  settings = [csvSeparator, hourFormat, dateFormat, hourColumns, dateColumns]
   for(let i = 0; i < listIds.length; i++){
-    document.getElementById(listIds[i]).value = settings[i]
+    if(i < settings.length){
+      document.getElementById(listIds[i]).value = settings[i]
+    } else {
+      document.getElementById(listIds[i]).value = dictionary[defaultHeadersArray[i - settings.length]]
+    }
   }
 }
