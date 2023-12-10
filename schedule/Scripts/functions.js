@@ -76,6 +76,7 @@ function parseURLs(urls, e, csvDataDiv, hiddenDiv) {
       header: true,
       complete: function (results) {
           handleParsedData(results, i, e, csvDataDiv, hiddenDiv, false);
+          evaluateCriteriums(results)
       }
     });
   }
@@ -126,4 +127,80 @@ function settingsToValue(listIds){
       document.getElementById(listIds[i]).value = dictionary[defaultHeadersArray[i - settings.length]]
     }
   }
+}
+
+function evaluateCriteriums(results){
+  criteriumOvercrowding(results)
+  criteriumOverlaping(results)
+  criteriumClassRequisites(results) 
+}
+
+function criteriumOvercrowding(results){
+  // console.log(results.data[1]['Edifício']) //Como se acede a cada elemento
+  let countOvercrowding = 0
+  let countTotalStudentsOvercrowding = 0
+  for(let i = 0; i < results.data.length; i++){
+    let lotacao = results.data[i][dictionary['Lotação']]
+    let inscritos = results.data[i][dictionary['Inscritos no turno']]
+    if(lotacao - inscritos < 0 ){
+      countOvercrowding++
+      countTotalStudentsOvercrowding += Math.abs(lotacao - inscritos)
+    }
+  }  
+  console.log("Total Overcrowdings: " + countOvercrowding)
+  console.log("Total of Students With no place in Classes with OverCrowding: " + countTotalStudentsOvercrowding)
+}
+
+function criteriumOverlaping(results){
+  /**count_overlaping = 0 FUNCIONA MAS É LENTO
+  for(let i = 0; i < results.data.length - 1; i++){
+      for(let j = i + 1; j < results.data.length; j++){
+        if(results.data[i][dictionary['Dia']] === results.data[j][dictionary['Dia']] && // Check if classes are on the same day
+        ((results.data[i][dictionary['Início']] < results.data[j][dictionary['Fim']] && results.data[i][dictionary['Fim']] > results.data[j][dictionary['Início']]) ||
+        (results.data[j][dictionary['Início']] < results.data[i][dictionary['Fim']] && results.data[j][dictionary['Fim']] > results.data[i][dictionary['Início']]))){
+          count_overlaping++
+        }
+    }
+  }**/
+  
+  let classesByDate = {};
+
+  for (let i = 0; i < results.data.length; i++) {
+    if (!classesByDate[results.data[i]['Dia']]) {
+        classesByDate[results.data[i]['Dia']] = [];
+    }
+    classesByDate[results.data[i]['Dia']].push(results.data[i]);
+  }
+
+  let countOverlaping = 0
+  Object.keys(classesByDate).forEach((date) => {
+    let classesForDate = classesByDate[date];
+    for (let i = 0; i < classesForDate.length - 1; i++) {
+      for (let j = i + 1; j < classesForDate.length; j++) {
+        if((classesForDate[i][dictionary['Início']] < classesForDate[j][dictionary['Fim']] && classesForDate[i][dictionary['Fim']] > classesForDate[j][dictionary['Início']]) ||
+          (classesForDate[j][dictionary['Início']] < classesForDate[i][dictionary['Fim']] && classesForDate[j][dictionary['Fim']] > classesForDate[i][dictionary['Início']])){
+            countOverlaping++
+        }
+      }
+    }
+  });
+  console.log("Total of Overlapings: " + countOverlaping)
+}
+
+function criteriumClassRequisites(results){
+  let countRequisitesNotMet = 0
+  let countNoClassroom = 0
+  for(let i = 0; i < results.data.length; i++){
+    let askedRequisites = results.data[i][dictionary['Características da sala pedida para a aula']].split(" ") 
+    let realRequisites = results.data[i][dictionary['Características reais da sala']]
+    if(askedRequisites.every(term => realRequisites.includes(term))){
+      countRequisitesNotMet++
+    }
+    if(realRequisites === ""){
+      countNoClassroom++
+    }
+
+  }
+  console.log("Total Requisites not met: " + countRequisitesNotMet)
+  console.log("Total no classroom: " + countNoClassroom)
 }
