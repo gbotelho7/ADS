@@ -181,6 +181,16 @@
         dictionary[defaultHeadersArray[i]] = input.value;
         i++;
       });
+
+      //VER SE FUNCIONA BEM 
+      //const criteriumInputs = Array.from(document.querySelectorAll('.criteriumInput'))
+      //  .map(input => input.value.trim())
+      //  .filter(value => value !== "");
+
+      // Update dictionary using inputsHeaders and defaultHeadersArray
+      // inputsHeaders.forEach((input, index) => {
+      //  dictionary[defaultHeadersArray[index]] = input.value;
+      // });
     });
 
     document.getElementById("csvScheduleFileInput").addEventListener("change", function (e) {
@@ -235,3 +245,4 @@
   </script>
 </body>
 </html>
+

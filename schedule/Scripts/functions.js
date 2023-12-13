@@ -36,20 +36,22 @@ function handleParsedData(results, index, e, csvDataDiv, hiddenDiv, classroomsIn
   );
 
   if ((headersMatch && dateFormatsMatch && timeFormatsMatch) || (headersMatch && classroomsInput)) {
-    if(hiddenDiv.style.display === "none"){
+    if (hiddenDiv.style.display === "none"){
       hiddenDiv.style.display = "block"
     }
     const table = document.createElement("div");
     table.setAttribute("id", "csvTable" + index);
     csvDataDiv.appendChild(table);
+    if (!classroomsInput){
+      new Tabulator("#csvTable" + index, {
+        data: results.data,
+        layout: "fitData",
+        autoColumns: true,
+        pagination: "local",
+        paginationSize: 7,
+      });
+    }
 
-    new Tabulator("#csvTable" + index, {
-      data: results.data,
-      layout: "fitData",
-      autoColumns: true,
-      pagination: "local",
-      paginationSize: 7,
-    });
   } else {
     if(hiddenDiv.style.display === "block" && classroomsInput){
       hiddenDiv.style.display = "none"
@@ -133,6 +135,9 @@ function evaluateCriteriums(results){
   criteriumOvercrowding(results)
   criteriumOverlaping(results)
   criteriumClassRequisites(results) 
+  console.log(substituteColumnNamesWithValues(results, expression, 500, columnNames))
+  
+  console.log(substituteColumnNamesWithValues(results, expression, 10000, columnNames))
 }
 
 function criteriumOvercrowding(results){
@@ -152,17 +157,6 @@ function criteriumOvercrowding(results){
 }
 
 function criteriumOverlaping(results){
-  /**count_overlaping = 0 FUNCIONA MAS É LENTO
-  for(let i = 0; i < results.data.length - 1; i++){
-      for(let j = i + 1; j < results.data.length; j++){
-        if(results.data[i][dictionary['Dia']] === results.data[j][dictionary['Dia']] && // Check if classes are on the same day
-        ((results.data[i][dictionary['Início']] < results.data[j][dictionary['Fim']] && results.data[i][dictionary['Fim']] > results.data[j][dictionary['Início']]) ||
-        (results.data[j][dictionary['Início']] < results.data[i][dictionary['Fim']] && results.data[j][dictionary['Fim']] > results.data[i][dictionary['Início']]))){
-          count_overlaping++
-        }
-    }
-  }**/
-  
   let classesByDate = {};
 
   for (let i = 0; i < results.data.length; i++) {
@@ -204,3 +198,78 @@ function criteriumClassRequisites(results){
   console.log("Total Requisites not met: " + countRequisitesNotMet)
   console.log("Total no classroom: " + countNoClassroom)
 }
+
+function countOccurrences(data, fieldIndex) {
+  let dictionary = {};
+
+  // Loop through the data and count occurrences of the specified field
+  data.forEach((item) => {
+      let fieldValue = item[fieldIndex];
+      
+      if (!dictionary[fieldValue]) {
+          dictionary[fieldValue] = 1;
+      } else {
+          dictionary[fieldValue]++;
+      }
+  });
+
+  return dictionary;
+}
+
+function criteriumNotUsedRequisites(resultsSchedule, resultsClassrooms){
+  let dictionaryClassrooms = countOccurrences(resultsClassrooms, 'className');
+  let dictionaryAskedRequisites = countOccurrences(resultsSchedule, 'Características da sala pedida para a aula');
+  let dictionaryRealRequisites = countOccurrences(resultsSchedule,'Características reais da sala');
+
+
+  // necessárias = pedidos - reais -> as diferentes das pedidas
+  // sobram = classrooms - reais -> sobram em cada sala
+  // sobram - necessárias
+}
+
+//function dynamicCriterium(expression){
+
+//}
+
+function extractColumnNamesFromExpression(expression, allColumnNames) {
+  const foundColumnNames = [];
+
+  allColumnNames.forEach(columnName => {
+      if (expression.includes(columnName)) {
+          foundColumnNames.push(columnName);
+      }
+  });
+
+  return foundColumnNames;
+}
+
+function substituteColumnNamesWithValues(results, expression, row, columnNames) {
+  let modifiedExpression = expression;
+
+  columnNames.forEach(columnName => {
+      modifiedExpression = modifiedExpression.replace(new RegExp(columnName, 'g'), results.data[row][columnName]);
+  });
+
+
+  try {
+    const result = math.evaluate(modifiedExpression);
+    console.log(`Result for row: ${result}`);
+  } catch (error) {
+      console.error(`Error evaluating expression for row: ${error}`);
+  }
+
+  return modifiedExpression;
+}
+
+// Example usage
+const allColumnNames = ["Sala de aula", "Inscritos no turno", "Lotação"]; // All possible column names
+const expression = "Inscritos no turno + Lotação > 10";
+const columnNames = extractColumnNamesFromExpression(expression, allColumnNames);
+
+console.log(columnNames); // ["Inscritos", "Lotacao"]
+
+
+/**results.data.forEach(row => {
+  const rowSpecificExpression = substituteColumnNamesWithValues(expression, row, columnNames);
+  console.log(rowSpecificExpression); // This will log the expression with values substituted for each row
+});**/
