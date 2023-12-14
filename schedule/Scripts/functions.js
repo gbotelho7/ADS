@@ -86,18 +86,18 @@ function parseURLs(urls, e, csvDataDiv, hiddenDiv) {
 };
 
 function saveSettings(){
-  let settings = { "csvSeparator": csvSeparator, "dynamicCriterium": dynamicCriterium, "hourFormat": hourFormat, "dateFormat": dateFormat, "dateColumns": dateColumns, "hourColumns": hourColumns, "dictionary": dictionary};
+  let settings = { "csvSeparator": csvSeparator, "hourFormat": hourFormat, "dateFormat": dateFormat, "dateColumns": dateColumns, "hourColumns": hourColumns, "dictionary": dictionary};
   localStorage.setItem('executionData', JSON.stringify(settings)); 
 }
 
-function handleSwitch(csvFileInput, csvUrlInput) {
-  if(toggleSwitch.checked){
-    csvFileInput.style.display = "none"
-    csvUrlInput.style.display = "block"
-  } else{
-    csvFileInput.style.display = "block"
-    csvUrlInput.style.display = "none"
-  }
+function handleSwitch(input1, input2, toggleSwitch) {
+    if(toggleSwitch.checked){
+      input1.style.display = "none"
+      input2.style.display = "block"
+    } else{
+      input1.style.display = "block"
+      input2.style.display = "none"
+    }
 }
 
 function addNewInput(className, placeholderText, containerId) {
@@ -135,9 +135,9 @@ function evaluateCriteriums(results){
   criteriumOvercrowding(results)
   criteriumOverlaping(results)
   criteriumClassRequisites(results) 
-  console.log(substituteColumnNamesWithValues(results, expression, 500, columnNames))
+  //console.log(substituteColumnNamesWithValues(results, expression, 500, columnNames))
   
-  console.log(substituteColumnNamesWithValues(results, expression, 10000, columnNames))
+  //console.log(substituteColumnNamesWithValues(results, expression, 10000, columnNames))
 }
 
 function criteriumOvercrowding(results){
@@ -197,7 +197,7 @@ function criteriumClassRequisites(results){
   }
   console.log("Total Requisites not met: " + countRequisitesNotMet)
   console.log("Total no classroom: " + countNoClassroom)
-}
+} //Atualizar para usar ficheiro de salas
 
 function countOccurrences(data, fieldIndex) {
   let dictionary = {};
@@ -225,19 +225,34 @@ function criteriumNotUsedRequisites(resultsSchedule, resultsClassrooms){
   // necessárias = pedidos - reais -> as diferentes das pedidas
   // sobram = classrooms - reais -> sobram em cada sala
   // sobram - necessárias
+} 
+
+function evaluateDynamicFormulaCriterium(results, expression){
+  let counter = 0 
+  const foundColumnNames = extractColumnNamesFromExpression(expression, Object.keys(dictionary))
+  let result;
+  results.data.forEach(row => {
+    const rowSpecificExpression = substituteColumnNamesWithValues(results, expression, row, foundColumnNames);
+    try {
+      result = math.evaluate(rowSpecificExpression)
+    } catch (error) {
+      console.error(`Error evaluating expression for row: ${error}`);
+    }
+    if(!result){
+      counter++
+    }
+  })
+
+
 }
-
-//function dynamicCriterium(expression){
-
-//}
 
 function extractColumnNamesFromExpression(expression, allColumnNames) {
   const foundColumnNames = [];
 
   allColumnNames.forEach(columnName => {
-      if (expression.includes(columnName)) {
-          foundColumnNames.push(columnName);
-      }
+    if (expression.includes(columnName)) {
+      foundColumnNames.push(columnName);
+    }
   });
 
   return foundColumnNames;
@@ -247,29 +262,32 @@ function substituteColumnNamesWithValues(results, expression, row, columnNames) 
   let modifiedExpression = expression;
 
   columnNames.forEach(columnName => {
-      modifiedExpression = modifiedExpression.replace(new RegExp(columnName, 'g'), results.data[row][columnName]);
+    const value = results.data[row][columnName]
+    modifiedExpression = modifiedExpression.replace(new RegExp(columnName, 'g'), `"${value}"`);
   });
-
-
-  try {
-    const result = math.evaluate(modifiedExpression);
-    console.log(`Result for row: ${result}`);
-  } catch (error) {
-      console.error(`Error evaluating expression for row: ${error}`);
-  }
 
   return modifiedExpression;
 }
 
-// Example usage
-const allColumnNames = ["Sala de aula", "Inscritos no turno", "Lotação"]; // All possible column names
-const expression = "Inscritos no turno + Lotação > 10";
-const columnNames = extractColumnNamesFromExpression(expression, allColumnNames);
+function evaluateDynamicTextCriterium(results, column, inputText){
+  let counter = 0
+  for(let i = 0; i < results.data.length; i++){
+    if(math.compareText(results.data[row][column], inputText) !== 0){
+      counter++
+    }
+  }
+  console.log(counter)
+  return counter
+}
 
-console.log(columnNames); // ["Inscritos", "Lotacao"]
 
-
-/**results.data.forEach(row => {
-  const rowSpecificExpression = substituteColumnNamesWithValues(expression, row, columnNames);
-  console.log(rowSpecificExpression); // This will log the expression with values substituted for each row
-});**/
+function updateDynamicCriteriums(dropdown){
+  dropdown.innerHTML = '';
+  console.log("Teste " + dictionary)
+  for (let key of Object.keys(dictionary)) {
+    const option = document.createElement('option');
+    option.value = key;
+    option.text = key;
+    dropdown.appendChild(option);
+  }
+}

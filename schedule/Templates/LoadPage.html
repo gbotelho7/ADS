@@ -23,7 +23,6 @@
     let jsonData;
     window.dictionary = parsedData.dictionary || {}; //TODO Adicionar os seus valores aos inputs
     window.csvSeparator = parsedData.csvSeparator || ';';
-    window.dynamicCriterium = parsedData.dynamicCriterium || ""; //TODO Alterar para a forma de array
     window.hourFormat = parsedData.hourFormat || "HH:mm:ss";
     window.dateFormat = parsedData.dateFormat || "DD/MM/YYYY";
     window.dateColumns = parsedData.dateColumns || 'Dia'
@@ -33,7 +32,7 @@
   </script>
   
     <h3>Ficheiro de Salas</h3>
-    <input type="file" id="csvClassroomFileInput" multiple>
+    <input type="file" id="csvClassroomFileInput">
     <br>
     <div style="display: none" id="after-classrooms">
       
@@ -42,7 +41,7 @@
       
       File Input
       <label class="switch">
-        <input type="checkbox" id="toggleSwitch">
+        <input type="checkbox" id="toggleSwitch1">
         <span class="slider"></span>
       </label>
       URL Input
@@ -110,15 +109,35 @@
         <label for="headerd">Cabeçalhos Datas:</label>
         <input type="text" id="headerd" name="headerd"><br>
         
-        <div id="criteriumInputs">
-          Dynamic Criterium:
-          <input type="text" class="criteriumInput" placeholder="Enter Criterium">
-        </div>
+        
 
         <input type="submit" value="Submeter">
       </form>
     </div>
     <div id="csvData"></div>
+    <div id="dynamicCriteriums" > <!--style="display: none;"-->
+        Formula Dynamic Criterium
+        <label class="switch">
+          <input type="checkbox" id="toggleSwitch2">
+          <span class="slider"></span>
+        </label>
+        Text Dynamic Criterium
+      
+      <div id="criteriumFormulaInputs">
+        Critérios Dinamicos com Formula:
+        <input type="text" id="criteriumFormulaInputValue" placeholder="Enter Criterium">
+        <input type="submit"  id="criteriumFormulaSubmit">
+      </div>
+      <div id="criteriumTextInputs" style="display: none;">
+        Critérios Dinamicos com Texto:
+        <select name="fields" id="dropdown">
+          <option value="option1">Option 1</option>
+        </select>
+        <input type="text" id="criteriumTextInputValue">
+        <input type="submit"  id="criteriumTextSubmit">
+      </div>
+    </div>
+    <div id=""></div>
   
   <script>
 
@@ -128,19 +147,44 @@
 
     const csvFileInput = document.getElementById("csvScheduleFileInput")
     const csvUrlInput = document.getElementById("csvScheduleUrlInput")
-    const toggleSwitch = document.getElementById('toggleSwitch');
+    const criteriumFormulaInputs = document.getElementById("criteriumFormulaInputs")
+    const criteriumTextInputs = document.getElementById("criteriumTextInputs")
+
+    const criteriumFormulaInputValue = document.getElementById("criteriumFormulaInputValue")
+    const criteriumTextInputValue = document.getElementById("criteriumTextInputValue")
+
+    const toggleSwitch1 = document.getElementById('toggleSwitch1');
+    const toggleSwitch2 = document.getElementById('toggleSwitch2');
+
+    const formulaSubmit = document.getElementById("criteriumFormulaSubmit") 
+    const textSubmit = document.getElementById("criteriumTextSubmit")
+
+    const dropdown = document.getElementById("dropdown");
 
     const csvDataDiv = document.getElementById("csvData");
     const hiddenDiv = document.getElementById("after-classrooms")
     const inputsHeaders = document.querySelectorAll('#headers input[type="text"]');
-
-    //settingsToValue(['delimiter', 'hformat', 'dformat', 'headerh', 'headerd'], inputsHeaders) //TODO Adicionar aqui os valores do dicionário
-    
+  
     settingsToValue([...['delimiter', 'hformat', 'dformat', 'headerh', 'headerd'], ...Array.from(inputsHeaders).map(input => input.id)])
 
-    toggleSwitch.addEventListener('change', function() {
-      handleSwitch(csvFileInput, csvUrlInput);
+    toggleSwitch1.addEventListener('change', function() {
+      handleSwitch(csvFileInput, csvUrlInput, toggleSwitch1);
     });
+
+    toggleSwitch2.addEventListener('change', function() {
+      handleSwitch(criteriumFormulaInputs, criteriumTextInputs, toggleSwitch2);
+    });
+
+    formulaSubmit.addEventListener("click", () => {
+      console.log(criteriumFormulaInputValue.value)
+      evaluateDynamicFormulaCriterium(results, criteriumFormulaInputValue.value)
+      //Fazer Update ao Tabulator
+    })
+
+    textSubmit.addEventListener("click", () => {
+      evaluateDynamicTextCriterium(results, dropdown.value, criteriumTextInputValue.value)
+      //Fazer Update ao Tabulator
+    })
 
     showFormButton.addEventListener("click", () => {
       if (form.style.display === "none") {
@@ -153,11 +197,6 @@
     document.addEventListener("input", function (event) {
       addNewInput('urlInput', 'Enter URL', 'urlInputs');
     });
-
-    form.addEventListener("input", function (event) {
-      addNewInput('criteriumInput', 'Enter Criterium', 'criteriumInputs');
-    });
-
     
     form.addEventListener("submit", function(event) {
       event.preventDefault(); // Prevent the form from actually submitting
@@ -168,24 +207,11 @@
       handleInputChange("headerh", "hourColumns");
       handleInputChange("headerd", "dateColumns");
 
-      const criteriumInputs = [];
-      const inputValues = document.querySelectorAll('.criteriumInput');
-      inputValues.forEach(input => {
-        if(input.value.trim() !== ""){
-          criteriumInputs.push(input.value.trim());
-        }
-      });
-
       let i = 0;
       inputsHeaders.forEach(input => {
         dictionary[defaultHeadersArray[i]] = input.value;
         i++;
       });
-
-      //VER SE FUNCIONA BEM 
-      //const criteriumInputs = Array.from(document.querySelectorAll('.criteriumInput'))
-      //  .map(input => input.value.trim())
-      //  .filter(value => value !== "");
 
       // Update dictionary using inputsHeaders and defaultHeadersArray
       // inputsHeaders.forEach((input, index) => {
@@ -205,26 +231,24 @@
           complete: function (results) {
             handleParsedData(results, i, e, csvDataDiv, hiddenDiv, false);
             evaluateCriteriums(results)
+            updateDynamicCriteriums(dropdown)
           }
         });
       }
       saveSettings()
+
     });
 
     document.getElementById("csvClassroomFileInput").addEventListener("change", function (e) {
-      const files = e.target.files;
+      const file = e.target.files[0];
       csvDataDiv.innerHTML = ""; // Clear previous data
-
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
         Papa.parse(file, {
           delimiter: csvSeparator,
           header: true,
           complete: function (results) {
-            handleParsedData(results, i, e, csvDataDiv, hiddenDiv, true);
+            handleParsedData(results, 0, e, csvDataDiv, hiddenDiv, true);
           }
         });
-      }
       saveSettings()
     });
 
