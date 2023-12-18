@@ -1,4 +1,4 @@
-
+// Recebe os dados e confirma se estão de acordo com as configurações 
 function handleParsedData(results, index, e, csvDataDiv, hiddenDiv, classroomsInput) {
   let headersMatch = false;
   console.log(dictionary)
@@ -27,12 +27,12 @@ function handleParsedData(results, index, e, csvDataDiv, hiddenDiv, classroomsIn
 
   const dateFormatsMatch = dateColumns.split(";").every((column) =>
     results.meta.fields.includes(column) &&
-    results.data.every(row =>  (moment(row[column], dateFormat, true).isValid() || row[column]=== '') )   //every moment(row[column], dateFormat, true).isValid()
+    results.data.every(row =>  (moment(row[column], dateFormat, true).isValid() || row[column]=== '') )
   );
 
   const timeFormatsMatch = hourColumns.split(";").every((column) =>
     results.meta.fields.includes(column) &&
-    results.data.every(row => (moment(row[column], hourFormat, true).isValid() || row[column]=== '')) //every moment(row[column], hourFormat, true).isValid()
+    results.data.every(row => (moment(row[column], hourFormat, true).isValid() || row[column]=== '')) 
   );
 
   if ((headersMatch && dateFormatsMatch && timeFormatsMatch) || (headersMatch && classroomsInput)) {
@@ -67,9 +67,9 @@ function handleParsedData(results, index, e, csvDataDiv, hiddenDiv, classroomsIn
   }
 };
 
+// Faz a recepção dos dados no caso dos URLs
 function parseURLs(urls, e, csvDataDiv, hiddenDiv) {
   csvDataDiv.innerHTML = ""; // Clear previous data
-
   for (let i = 0; i < urls.length; i++) {
       const url = urls[i];
       Papa.parse(url, {
@@ -85,21 +85,24 @@ function parseURLs(urls, e, csvDataDiv, hiddenDiv) {
   saveSettings()
 };
 
+// Guarda os diferentes dados
 function saveSettings(){
   let settings = { "csvSeparator": csvSeparator, "hourFormat": hourFormat, "dateFormat": dateFormat, "dateColumns": dateColumns, "hourColumns": hourColumns, "dictionary": dictionary};
   localStorage.setItem('executionData', JSON.stringify(settings)); 
 }
 
+// Ajuda os Switches tanto de inputs como de critérios
 function handleSwitch(input1, input2, toggleSwitch) {
-    if(toggleSwitch.checked){
-      input1.style.display = "none"
-      input2.style.display = "block"
-    } else{
-      input1.style.display = "block"
-      input2.style.display = "none"
-    }
+  if(toggleSwitch.checked){
+    input1.style.display = "none"
+    input2.style.display = "block"
+  } else{
+    input1.style.display = "block"
+    input2.style.display = "none"
+  }
 }
 
+// Adiciona diferentes inputs no caso dos URLs
 function addNewInput(className, placeholderText, containerId) {
   const inputs = document.querySelectorAll(`.${className}`);
   const lastInput = inputs[inputs.length - 1];
@@ -113,6 +116,7 @@ function addNewInput(className, placeholderText, containerId) {
   }
 }
 
+// Muda o valor da variável caso esta sofra alterações
 function handleInputChange(elementId, variableToUpdate) {
   const element = document.getElementById(elementId);
   if (element && element.value !== "") {
@@ -120,6 +124,7 @@ function handleInputChange(elementId, variableToUpdate) {
   }
 }
 
+// Coloca os valores guardados como values dos inputs
 function settingsToValue(listIds){ 
   settings = [csvSeparator, hourFormat, dateFormat, hourColumns, dateColumns]
   for(let i = 0; i < listIds.length; i++){
@@ -131,6 +136,7 @@ function settingsToValue(listIds){
   }
 }
 
+//Função que recolhe os diferentes resultados dos critérios dinamicos
 function evaluateCriteriums(results){
   criteriumOvercrowding(results)
   criteriumOverlaping(results)
@@ -140,6 +146,7 @@ function evaluateCriteriums(results){
   //console.log(substituteColumnNamesWithValues(results, expression, 10000, columnNames))
 }
 
+// Função que avalia o criterio de sobrelotação e conta o numero de alunos em sobrelotação
 function criteriumOvercrowding(results){
   // console.log(results.data[1]['Edifício']) //Como se acede a cada elemento
   let countOvercrowding = 0
@@ -156,6 +163,7 @@ function criteriumOvercrowding(results){
   console.log("Total of Students With no place in Classes with OverCrowding: " + countTotalStudentsOvercrowding)
 }
 
+// Função que avalia o critério de sobreposição de aulas
 function criteriumOverlaping(results){
   let classesByDate = {};
 
@@ -181,6 +189,7 @@ function criteriumOverlaping(results){
   console.log("Total of Overlapings: " + countOverlaping)
 }
 
+// Função que avalia o critério de requesitos e que avalia o numero de aulas sem sala 
 function criteriumClassRequisites(results){
   let countRequisitesNotMet = 0
   let countNoClassroom = 0
@@ -227,6 +236,7 @@ function criteriumNotUsedRequisites(resultsSchedule, resultsClassrooms){
   // sobram - necessárias
 } 
 
+//Função que avalia a formula do critério dinamico
 function evaluateDynamicFormulaCriterium(results, expression){
   let counter = 0 
   const foundColumnNames = extractColumnNamesFromExpression(expression, Object.keys(dictionary))
@@ -245,6 +255,7 @@ function evaluateDynamicFormulaCriterium(results, expression){
 
 
 }
+
 
 function extractColumnNamesFromExpression(expression, allColumnNames) {
   const foundColumnNames = [];
@@ -269,6 +280,7 @@ function substituteColumnNamesWithValues(results, expression, row, columnNames) 
   return modifiedExpression;
 }
 
+//Função que avalia o texto do critério dinamico
 function evaluateDynamicTextCriterium(results, column, inputText){
   let counter = 0
   for(let i = 0; i < results.data.length; i++){
@@ -280,7 +292,7 @@ function evaluateDynamicTextCriterium(results, column, inputText){
   return counter
 }
 
-
+// Recebe os valore dos cabeçalhos e insere no dropdown dos critérios dinamicos
 function updateDynamicCriteriums(dropdown){
   dropdown.innerHTML = '';
   console.log("Teste " + dictionary)

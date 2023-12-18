@@ -9,18 +9,19 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/5.0.5/js/tabulator.min.js"></script>
   <script src="https://unpkg.com/mathjs@12.0.0/lib/browser/math.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <script src="https://cdn.fusioncharts.com/fusioncharts/latest/fusioncharts.js"></script>
   <script src="../Scripts/functions.js"></script>
+  
 
 </head>
 <body>
   
   <script>
-    const storedData = localStorage.getItem('executionData');
+    const storedData = localStorage.getItem('executionData'); //Dados o ficheiro de configuração
     console.log(storedData)
-    const parsedData = storedData ? JSON.parse(storedData) : {};
+    const parsedData = storedData ? JSON.parse(storedData) : {}; //Transformar a info em JSON 
     window.defaultHeadersArray = "Curso;Unidade de execução;Turno;Turma;Inscritos no turno;Dia da Semana;Início;Fim;Dia;Características da sala pedida para a aula;Sala da aula;Lotação;Características reais da sala".split(";");
 
-    let jsonData;
     window.dictionary = parsedData.dictionary || {}; //TODO Adicionar os seus valores aos inputs
     window.csvSeparator = parsedData.csvSeparator || ';';
     window.hourFormat = parsedData.hourFormat || "HH:mm:ss";
@@ -30,7 +31,6 @@
     
 
   </script>
-  
     <h3>Ficheiro de Salas</h3>
     <input type="file" id="csvClassroomFileInput">
     <br>
@@ -137,7 +137,8 @@
         <input type="submit"  id="criteriumTextSubmit">
       </div>
     </div>
-    <div id=""></div>
+    <div id="chart-container"></div>
+    <div id="graphs"></div>
   
   <script>
 
@@ -165,27 +166,33 @@
     const hiddenDiv = document.getElementById("after-classrooms")
     const inputsHeaders = document.querySelectorAll('#headers input[type="text"]');
   
+    // Coloca os diferentes variaveis como conteudo dos inputs do formulário
     settingsToValue([...['delimiter', 'hformat', 'dformat', 'headerh', 'headerd'], ...Array.from(inputsHeaders).map(input => input.id)])
 
+    // Botão entre iput de ficheiro ou input de url 
     toggleSwitch1.addEventListener('change', function() {
       handleSwitch(csvFileInput, csvUrlInput, toggleSwitch1);
     });
 
+    // Botão entre os diferentes critérios dinamicos
     toggleSwitch2.addEventListener('change', function() {
       handleSwitch(criteriumFormulaInputs, criteriumTextInputs, toggleSwitch2);
     });
 
+    // Submeter Critério dinamico em formula
     formulaSubmit.addEventListener("click", () => {
       console.log(criteriumFormulaInputValue.value)
       evaluateDynamicFormulaCriterium(results, criteriumFormulaInputValue.value)
       //Fazer Update ao Tabulator
     })
 
+    // Submeter Critério dinamico de texto 
     textSubmit.addEventListener("click", () => {
       evaluateDynamicTextCriterium(results, dropdown.value, criteriumTextInputValue.value)
       //Fazer Update ao Tabulator
     })
 
+    //Fazer aparecer o formulário das configurações
     showFormButton.addEventListener("click", () => {
       if (form.style.display === "none") {
         form.style.display = "block";
@@ -194,10 +201,12 @@
       }
     });
 
+    // Adicionar os diversos url caso sejam necessários
     document.addEventListener("input", function (event) {
       addNewInput('urlInput', 'Enter URL', 'urlInputs');
     });
     
+    // Receber e armazenar os valores das configurações
     form.addEventListener("submit", function(event) {
       event.preventDefault(); // Prevent the form from actually submitting
 
@@ -219,6 +228,7 @@
       // });
     });
 
+    // Receber multiplos ficheiros de horários
     document.getElementById("csvScheduleFileInput").addEventListener("change", function (e) {
       const files = e.target.files;
       csvDataDiv.innerHTML = ""; // Clear previous data
@@ -239,6 +249,7 @@
 
     });
 
+    // Receber ficheiro da configuração das salas
     document.getElementById("csvClassroomFileInput").addEventListener("change", function (e) {
       const file = e.target.files[0];
       csvDataDiv.innerHTML = ""; // Clear previous data
@@ -252,7 +263,7 @@
       saveSettings()
     });
 
-
+    // Guardar valores dos inputs de URL
     parseButton.addEventListener("click", (e) => {
       const urlInputs = document.querySelectorAll('.urlInput');
       const urls = [];
@@ -266,6 +277,7 @@
         parseURLs(urls, e,  csvDataDiv, hiddenDiv);
       }
     });
+
   </script>
 </body>
 </html>
