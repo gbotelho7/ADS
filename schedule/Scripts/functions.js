@@ -138,16 +138,18 @@ function settingsToValue(listIds){
 
 //Função que recolhe os diferentes resultados dos critérios dinamicos
 function evaluateCriteriums(results){
-  criteriumOvercrowding(results)
-  criteriumOverlaping(results)
-  criteriumClassRequisites(results) 
+  criteriumArray = []
+  criteriumArray = criteriumOvercrowding(results, criteriumArray)
+  criteriumArray = criteriumOverlaping(results, criteriumArray)
+  criteriumArray = criteriumClassRequisites(results, criteriumArray) 
+  console.log(criteriumArray)
   //console.log(substituteColumnNamesWithValues(results, expression, 500, columnNames))
   
   //console.log(substituteColumnNamesWithValues(results, expression, 10000, columnNames))
 }
 
 // Função que avalia o criterio de sobrelotação e conta o numero de alunos em sobrelotação
-function criteriumOvercrowding(results){
+function criteriumOvercrowding(results, criteriumArray){
   // console.log(results.data[1]['Edifício']) //Como se acede a cada elemento
   let countOvercrowding = 0
   let countTotalStudentsOvercrowding = 0
@@ -159,12 +161,15 @@ function criteriumOvercrowding(results){
       countTotalStudentsOvercrowding += Math.abs(lotacao - inscritos)
     }
   }  
-  console.log("Total Overcrowdings: " + countOvercrowding)
-  console.log("Total of Students With no place in Classes with OverCrowding: " + countTotalStudentsOvercrowding)
+  criteriumArray.push(countOvercrowding)
+  criteriumArray.push(countTotalStudentsOvercrowding)
+  return criteriumArray
+  //console.log("Total Overcrowdings: " + countOvercrowding)
+  //console.log("Total of Students With no place in Classes with OverCrowding: " + countTotalStudentsOvercrowding)
 }
 
 // Função que avalia o critério de sobreposição de aulas
-function criteriumOverlaping(results){
+function criteriumOverlaping(results, criteriumArray){
   let classesByDate = {};
 
   for (let i = 0; i < results.data.length; i++) {
@@ -186,11 +191,13 @@ function criteriumOverlaping(results){
       }
     }
   });
-  console.log("Total of Overlapings: " + countOverlaping)
+  // console.log("Total of Overlapings: " + countOverlaping)
+  criteriumArray.push(countOverlaping)
+  return criteriumArray
 }
 
 // Função que avalia o critério de requesitos e que avalia o numero de aulas sem sala 
-function criteriumClassRequisites(results){
+function criteriumClassRequisites(results, criteriumArray){
   let countRequisitesNotMet = 0
   let countNoClassroom = 0
   for(let i = 0; i < results.data.length; i++){
@@ -204,9 +211,12 @@ function criteriumClassRequisites(results){
       countNoClassroom++
     }
   }
-  console.log("Total Requisites not met: " + countRequisitesNotMet)
-  console.log("Total no classroom: " + countNoClassroom)
-} //Atualizar para usar ficheiro de salas
+  criteriumArray.push(countRequisitesNotMet)
+  criteriumArray.push(countNoClassroom)
+  return criteriumArray
+  //console.log("Total Requisites not met: " + countRequisitesNotMet)
+  //console.log("Total no classroom: " + countNoClassroom)
+}
 
 function countOccurrences(data, fieldIndex) {
   let dictionary = {};
