@@ -194,15 +194,15 @@ function criteriumClassRequisites(results){
   let countRequisitesNotMet = 0
   let countNoClassroom = 0
   for(let i = 0; i < results.data.length; i++){
-    let askedRequisites = results.data[i][dictionary['Características da sala pedida para a aula']].split(" ") 
-    let realRequisites = results.data[i][dictionary['Características reais da sala']]
-    if(askedRequisites.every(term => realRequisites.includes(term))){
-      countRequisitesNotMet++
-    }
-    if(realRequisites === ""){
+    let askedRequisites = results.data[i][dictionary['Características da sala pedida para a aula']]
+    let roomName = results.data[i]['Sala da aula'];
+    if(roomName in classRoomDictionary){
+      if(!classRoomDictionary[roomName].includes(askedRequisites)){
+        countRequisitesNotMet++
+      }
+    } else if(roomName === "") {
       countNoClassroom++
     }
-
   }
   console.log("Total Requisites not met: " + countRequisitesNotMet)
   console.log("Total no classroom: " + countNoClassroom)
@@ -292,7 +292,7 @@ function evaluateDynamicTextCriterium(results, column, inputText){
   return counter
 }
 
-// Recebe os valore dos cabeçalhos e insere no dropdown dos critérios dinamicos
+// Recebe os valores dos cabeçalhos e insere no dropdown dos critérios dinamicos
 function updateDynamicCriteriums(dropdown){
   dropdown.innerHTML = '';
   console.log("Teste " + dictionary)
@@ -302,4 +302,25 @@ function updateDynamicCriteriums(dropdown){
     option.text = key;
     dropdown.appendChild(option);
   }
+}
+
+// Recebe dados do ficheiro das salas e devolve um dicionário com as caracteristicas de cada uma 
+function createClassRoomsDictionary(results){
+  const classroomDictionary = {};
+
+  results.data.forEach(row => {
+    const roomName = row['Nome sala'];
+    const xMarkedHeaders = [];
+
+    Object.keys(row).forEach(key => {
+      if (row[key] === 'X' && key !== 'Edifício' && key !== 'Nome sala' && key !== 'Capacidade Normal' && key !== 'Capacidade Exame' && key !== 'Nº características') {
+        xMarkedHeaders.push(key);
+      }
+    });
+
+    if (roomName && xMarkedHeaders.length > 0) {
+      classroomDictionary[roomName] = xMarkedHeaders;
+    }
+  });
+  classRoomDictionary = classroomDictionary
 }

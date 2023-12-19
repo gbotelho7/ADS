@@ -28,7 +28,7 @@
     window.dateFormat = parsedData.dateFormat || "DD/MM/YYYY";
     window.dateColumns = parsedData.dateColumns || 'Dia'
     window.hourColumns = parsedData.hourColumns || 'Início;Fim' 
-    
+    window.classRoomDictionary = {}; 
 
   </script>
     <h3>Ficheiro de Salas</h3>
@@ -258,6 +258,8 @@
           header: true,
           complete: function (results) {
             handleParsedData(results, 0, e, csvDataDiv, hiddenDiv, true);
+            createClassRoomsDictionary(results)
+            console.log(classRoomDictionary) // Dicionário com as salas e as suas caracteristicas
           }
         });
       saveSettings()
