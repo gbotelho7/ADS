@@ -19,11 +19,11 @@ function handleParsedData(results, index, e, csvDataDiv, hiddenDiv, classroomsIn
     headersMatch = defaultHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
   } else {
     headersMatch = Object.values(dictionary).every((header) => results.meta.fields.includes(header.trim()));
-    console.log(Object.values(dictionary))
-    console.log(results.meta.fields)
-    console.log(headersMatch)
+    // console.log(Object.values(dictionary))
+    // console.log(results.meta.fields)
+    // console.log(headersMatch)
   }
-  console.log(headersMatch)
+  //console.log(headersMatch)
 
   const dateFormatsMatch = dateColumns.split(";").every((column) =>
     results.meta.fields.includes(column) &&
@@ -42,15 +42,15 @@ function handleParsedData(results, index, e, csvDataDiv, hiddenDiv, classroomsIn
     const table = document.createElement("div");
     table.setAttribute("id", "csvTable" + index);
     csvDataDiv.appendChild(table);
-    if (!classroomsInput){
-      new Tabulator("#csvTable" + index, {
-        data: results.data,
-        layout: "fitData",
-        autoColumns: true,
-        pagination: "local",
-        paginationSize: 7,
-      });
-    }
+    // if (!classroomsInput){
+    //   new Tabulator("#csvTable" + index, {
+    //     data: results.data,
+    //     layout: "fitData",
+    //     autoColumns: true,
+    //     pagination: "local",
+    //     paginationSize: 7,
+    //   });
+    // }
 
   } else {
     if(hiddenDiv.style.display === "block" && classroomsInput){
@@ -136,20 +136,23 @@ function settingsToValue(listIds){
   }
 }
 
-//Função que recolhe os diferentes resultados dos critérios dinamicos
+//Função que recolhe os diferentes resultados dos critérios estaticos e coloca tudo dentro de um objeto
 function evaluateCriteriums(results){
-  criteriumArray = []
-  criteriumArray = criteriumOvercrowding(results, criteriumArray)
-  criteriumArray = criteriumOverlaping(results, criteriumArray)
-  criteriumArray = criteriumClassRequisites(results, criteriumArray) 
-  console.log(criteriumArray)
-  //console.log(substituteColumnNamesWithValues(results, expression, 500, columnNames))
-  
-  //console.log(substituteColumnNamesWithValues(results, expression, 10000, columnNames))
+  let criteriumArray = {}
+  let criterium = []
+  criterium = criteriumOvercrowding(results)
+  criteriumArray['Overcrowding'] = criterium[0]
+  criteriumArray['OvercrowdingStudents'] = criterium[1];
+  criteriumArray['Overlaping'] = criteriumOverlaping(results)
+  criterium = criteriumClassRequisites(results) 
+  criteriumArray['RequisitesNotMet'] = criterium[0]
+  criteriumArray['NoClassroom'] = criterium[1];
+  return criteriumArray
 }
 
 // Função que avalia o criterio de sobrelotação e conta o numero de alunos em sobrelotação
-function criteriumOvercrowding(results, criteriumArray){
+function criteriumOvercrowding(results){
+  let arr = []
   // console.log(results.data[1]['Edifício']) //Como se acede a cada elemento
   let countOvercrowding = 0
   let countTotalStudentsOvercrowding = 0
@@ -161,20 +164,20 @@ function criteriumOvercrowding(results, criteriumArray){
       countTotalStudentsOvercrowding += Math.abs(lotacao - inscritos)
     }
   }  
-  criteriumArray.push(countOvercrowding)
-  criteriumArray.push(countTotalStudentsOvercrowding)
-  return criteriumArray
+  arr.push(countOvercrowding)
+  arr.push(countTotalStudentsOvercrowding)
+  return arr
   //console.log("Total Overcrowdings: " + countOvercrowding)
   //console.log("Total of Students With no place in Classes with OverCrowding: " + countTotalStudentsOvercrowding)
 }
 
 // Função que avalia o critério de sobreposição de aulas
-function criteriumOverlaping(results, criteriumArray){
+function criteriumOverlaping(results){
   let classesByDate = {};
 
   for (let i = 0; i < results.data.length; i++) {
     if (!classesByDate[results.data[i]['Dia']]) {
-        classesByDate[results.data[i]['Dia']] = [];
+      classesByDate[results.data[i]['Dia']] = [];
     }
     classesByDate[results.data[i]['Dia']].push(results.data[i]);
   }
@@ -192,12 +195,12 @@ function criteriumOverlaping(results, criteriumArray){
     }
   });
   // console.log("Total of Overlapings: " + countOverlaping)
-  criteriumArray.push(countOverlaping)
-  return criteriumArray
+  return countOverlaping
 }
 
 // Função que avalia o critério de requesitos e que avalia o numero de aulas sem sala 
-function criteriumClassRequisites(results, criteriumArray){
+function criteriumClassRequisites(results){
+  let arr = []
   let countRequisitesNotMet = 0
   let countNoClassroom = 0
   for(let i = 0; i < results.data.length; i++){
@@ -211,9 +214,9 @@ function criteriumClassRequisites(results, criteriumArray){
       countNoClassroom++
     }
   }
-  criteriumArray.push(countRequisitesNotMet)
-  criteriumArray.push(countNoClassroom)
-  return criteriumArray
+  arr.push(countRequisitesNotMet)
+  arr.push(countNoClassroom)
+  return arr
   //console.log("Total Requisites not met: " + countRequisitesNotMet)
   //console.log("Total no classroom: " + countNoClassroom)
 }
@@ -290,22 +293,36 @@ function substituteColumnNamesWithValues(results, expression, row, columnNames) 
   return modifiedExpression;
 }
 
-//Função que avalia o texto do critério dinamico
-function evaluateDynamicTextCriterium(results, column, inputText){
-  let counter = 0
-  for(let i = 0; i < results.data.length; i++){
-    if(math.compareText(results.data[row][column], inputText) !== 0){
-      counter++
-    }
-  }
-  console.log(counter)
-  return counter
+
+function evaluateDynamicTextCriterium(schedulesData, column, inputText) {
+  // Generate the field name dynamically based on column and inputText
+  const inputParsed = inputText.split('.').join(' ') //Problema com o Tabulator 
+  const fieldName = `${column}=${inputParsed}`;
+
+  // Iterate through each schedule
+  Object.keys(schedulesData).forEach((scheduleId) => {
+    let counter = 0;
+    const schedule = schedulesData[scheduleId];
+
+    // Iterate through each row of data in the schedule
+    schedule.data.forEach((row) => {
+      if (math.compareText(row[column], inputText) === 0) {
+        counter++;
+      }
+    });
+    console.log(`Dynamic criterium (${fieldName}): ${counter}`);
+    // Update the criteriums field for the schedule using the dynamic field name
+    schedule.criteriums[fieldName] = counter;
+  });
+
+  //console.log(`Dynamic criterium (${fieldName}): ${counter}`);
+  return schedulesData;
 }
 
 // Recebe os valores dos cabeçalhos e insere no dropdown dos critérios dinamicos
 function updateDynamicCriteriums(dropdown){
   dropdown.innerHTML = '';
-  console.log("Teste " + dictionary)
+  //console.log("Teste " + dictionary)
   for (let key of Object.keys(dictionary)) {
     const option = document.createElement('option');
     option.value = key;
@@ -333,4 +350,40 @@ function createClassRoomsDictionary(results){
     }
   });
   classRoomDictionary = classroomDictionary
+}
+
+// Recebe todos os dados e cria a tabela do Tabulator
+function createTabulator(schedulesData){
+  const scheduleIds = Object.keys(schedulesData);
+
+  const firstSchedule = schedulesData[scheduleIds[0]];
+  const criteria = Object.keys(firstSchedule.criteriums);
+  
+  const columns = [
+    { title: "Horários", field: "scheduleId" }, // Column for Schedule ID
+    // Columns for each criterium
+    ...criteria.map((criterion) => ({
+      title: criterion,
+      field: criterion,
+    })),
+  ];
+  
+
+  const tableData = scheduleIds.map((id) => {
+    const rowData = { scheduleId: id };
+    criteria.forEach((criterion) => {
+      rowData[criterion] = schedulesData[id].criteriums[criterion] || "-";
+    });
+    return rowData;
+  });
+
+  console.log(tableData)
+
+  new Tabulator("#graphs", {
+    data: tableData,
+    columns: columns,
+    layout: "fitColumns",
+    // Add any other configurations you need
+  });
+  
 }

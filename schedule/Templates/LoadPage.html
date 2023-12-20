@@ -28,7 +28,8 @@
     window.dateFormat = parsedData.dateFormat || "DD/MM/YYYY";
     window.dateColumns = parsedData.dateColumns || 'Dia'
     window.hourColumns = parsedData.hourColumns || 'Início;Fim' 
-    window.classRoomDictionary = {}; 
+    window.classRoomDictionary = {}; // Guarda o dicionario que relaciona as salas com as suas caracteristiscas
+    window.schedulesData = [] // Guarda toda a estrutura e dados dos horarios
 
   </script>
     <h3>Ficheiro de Salas</h3>
@@ -188,7 +189,9 @@
 
     // Submeter Critério dinamico de texto 
     textSubmit.addEventListener("click", () => {
-      evaluateDynamicTextCriterium(results, dropdown.value, criteriumTextInputValue.value)
+      schedulesData = evaluateDynamicTextCriterium(schedulesData, dropdown.value, criteriumTextInputValue.value)
+      console.log(schedulesData)
+      createTabulator(schedulesData)
       //Fazer Update ao Tabulator
     })
 
@@ -231,28 +234,36 @@
     // Receber multiplos ficheiros de horários
     document.getElementById("csvScheduleFileInput").addEventListener("change", function (e) {
       const files = e.target.files;
+      schedulesData = []
+      filesProcessed = 0 
       csvDataDiv.innerHTML = ""; // Clear previous data
-
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         Papa.parse(file, {
           delimiter: csvSeparator,
           header: true,
           complete: function (results) {
+            const scheduleId = `Horário ${i + 1}`
+            const scheduleData = { data: results.data };
+            scheduleData['criteriums'] = evaluateCriteriums(results);
+            schedulesData[scheduleId] = scheduleData;
+
             handleParsedData(results, i, e, csvDataDiv, hiddenDiv, false);
-            evaluateCriteriums(results)
             updateDynamicCriteriums(dropdown)
+            filesProcessed++
+            if(filesProcessed === files.length){
+              createTabulator(schedulesData)
+            }
           }
         });
       }
       saveSettings()
-
     });
 
     // Receber ficheiro da configuração das salas
     document.getElementById("csvClassroomFileInput").addEventListener("change", function (e) {
       const file = e.target.files[0];
-      csvDataDiv.innerHTML = ""; // Clear previous data
+      csvDataDiv.innerHTML = ""; 
         Papa.parse(file, {
           delimiter: csvSeparator,
           header: true,
