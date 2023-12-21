@@ -116,14 +116,15 @@
       </form>
     </div>
     <div id="csvData"></div>
-    <div id="dynamicCriteriums" > <!--style="display: none;"-->
-        Formula Dynamic Criterium
-        <label class="switch">
-          <input type="checkbox" id="toggleSwitch2">
-          <span class="slider"></span>
-        </label>
-        Text Dynamic Criterium
-      
+    <div id="dynamicCriteriums" style="display: none;"> <!--style="display: none;"-->
+      <br>
+      Formula Dynamic Criterium
+      <label class="switch">
+        <input type="checkbox" id="toggleSwitch2">
+        <span class="slider"></span>
+      </label>
+      Text Dynamic Criterium
+    
       <div id="criteriumFormulaInputs">
         Critérios Dinamicos com Formula:
         <input type="text" id="criteriumFormulaInputValue" placeholder="Enter Criterium">
@@ -157,6 +158,10 @@
 
     const toggleSwitch1 = document.getElementById('toggleSwitch1');
     const toggleSwitch2 = document.getElementById('toggleSwitch2');
+
+    const dynamicCriteriums = document.getElementById('dynamicCriteriums');
+    const graphs = document.getElementById('graphs');
+    const chartContainer = document.getElementById('chart-container');
 
     const formulaSubmit = document.getElementById("criteriumFormulaSubmit") 
     const textSubmit = document.getElementById("criteriumTextSubmit")
@@ -254,6 +259,8 @@
             updateDynamicCriteriums(dropdown)
             filesProcessed++
             if(filesProcessed === files.length){
+              dynamicCriteriums.style.display = "block"
+              schedulesData = orderSchedulesData(schedulesData)
               createTabulator(schedulesData)
             }
           }
@@ -265,7 +272,9 @@
     // Receber ficheiro da configuração das salas
     document.getElementById("csvClassroomFileInput").addEventListener("change", function (e) {
       const file = e.target.files[0];
-      csvDataDiv.innerHTML = ""; 
+      csvDataDiv.innerHTML = "";
+      dynamicCriteriums.style.display = "none"
+
         Papa.parse(file, {
           delimiter: csvSeparator,
           header: true,
@@ -273,6 +282,10 @@
             handleParsedData(results, 0, e, csvDataDiv, hiddenDiv, true);
             createClassRoomsDictionary(results)
             console.log(classRoomDictionary) // Dicionário com as salas e as suas caracteristicas
+            dynamicCriteriums.style.display = "none"
+            graphs.innerHTML = ""
+            graphs.className = ""
+            chartContainer.innerHTML = ""
           }
         });
       saveSettings()

@@ -377,6 +377,17 @@ function createClassRoomsDictionary(results){
   classRoomDictionary = classroomDictionary
 }
 
+function orderSchedulesData(schedulesData){
+  const scheduleNames = Object.keys(schedulesData);
+  scheduleNames.sort();
+  let sortedSchedulesData = {};
+  scheduleNames.forEach((scheduleName) => {
+    sortedSchedulesData[scheduleName] = schedulesData[scheduleName];
+  });
+  return sortedSchedulesData
+}
+
+
 // Recebe todos os dados e cria a tabela do Tabulator
 function createTabulator(schedulesData){
   const scheduleIds = Object.keys(schedulesData);
@@ -392,7 +403,6 @@ function createTabulator(schedulesData){
       field: criterion,
     })),
   ];
-  
 
   const tableData = scheduleIds.map((id) => {
     const rowData = { scheduleId: id };
