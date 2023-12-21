@@ -411,8 +411,8 @@ function createTabulator(schedulesData){
     // Add any other configurations you need
   });
 
-  // Create FusionCharts data
-  const fusionChartData = {
+  // 
+  const lineChartData = {
     chart: {
       caption: "Criteria for Schedules",
       xAxisName: "Criteriums",
@@ -440,8 +440,9 @@ function createTabulator(schedulesData){
       width: "100%",
       height: "400",
       dataFormat: "json",
-      dataSource: fusionChartData,
+      dataSource: lineChartData,
     }).render();
   });
+
   
 }
