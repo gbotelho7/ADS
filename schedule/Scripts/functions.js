@@ -396,6 +396,7 @@ function createTabulator(schedulesData){
   const criteria = Object.keys(firstSchedule.criteriums);
   
   const columns = [
+    {formatter:"rowSelection", title:"Selecionado", align:"center", headerSort:false},
     { title: "Horários", field: "scheduleId" }, // Column for Schedule ID
     // Columns for each criterium
     ...criteria.map((criterion) => ({
@@ -414,10 +415,11 @@ function createTabulator(schedulesData){
 
   console.log(tableData)
 
-  new Tabulator("#graphs", {
+  table = new Tabulator("#graphs", {
     data: tableData,
     columns: columns,
     layout: "fitColumns",
+    selectable: 1
     // Add any other configurations you need
   });
 
