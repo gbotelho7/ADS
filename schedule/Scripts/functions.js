@@ -70,6 +70,8 @@ function handleParsedData(results, index, e, csvDataDiv, hiddenDiv, classroomsIn
 // Faz a recepção dos dados no caso dos URLs
 function parseURLs(urls, e, csvDataDiv, hiddenDiv) {
   csvDataDiv.innerHTML = ""; // Clear previous data
+  schedulesData = []
+  urlsProcessed = 0 
   for (let i = 0; i < urls.length; i++) {
       const url = urls[i];
       Papa.parse(url, {
@@ -77,8 +79,18 @@ function parseURLs(urls, e, csvDataDiv, hiddenDiv) {
       delimiter: csvSeparator,
       header: true,
       complete: function (results) {
-          handleParsedData(results, i, e, csvDataDiv, hiddenDiv, false);
-          evaluateCriteriums(results)
+        const scheduleId = `Horário ${i + 1}`
+        const scheduleData = { data: results.data };
+        scheduleData['criteriums'] = evaluateCriteriums(results);
+        schedulesData[scheduleId] = scheduleData;
+
+        handleParsedData(results, i, e, csvDataDiv, hiddenDiv, false);
+        updateDynamicCriteriums(dropdown)
+
+        urlsProcessed++
+        if(urlsProcessed === urls.length){
+          createTabulator(schedulesData)
+        }
       }
     });
   }
@@ -249,23 +261,37 @@ function criteriumNotUsedRequisites(resultsSchedule, resultsClassrooms){
   // sobram - necessárias
 } 
 
-//Função que avalia a formula do critério dinamico
-function evaluateDynamicFormulaCriterium(results, expression){
-  let counter = 0 
-  const foundColumnNames = extractColumnNamesFromExpression(expression, Object.keys(dictionary))
-  let result;
-  results.data.forEach(row => {
-    const rowSpecificExpression = substituteColumnNamesWithValues(results, expression, row, foundColumnNames);
-    try {
-      result = math.evaluate(rowSpecificExpression)
-    } catch (error) {
-      console.error(`Error evaluating expression for row: ${error}`);
+function evaluateDynamicFormulaCriterium(schedulesData, expression) {
+  const foundColumnNames = extractColumnNamesFromExpression(expression, Object.values(dictionary)); // Utiliza os valores do cabeçalho recebido
+  let errorCounter = 0
+  Object.keys(schedulesData).forEach((scheduleId) => {
+    let errorOccured = false
+    const schedule = schedulesData[scheduleId];
+    const scheduleData = schedule.data; // Assuming data is stored under 'data' property
+    let counter = 0
+    scheduleData.forEach((row) => {
+      const rowSpecificExpression = substituteColumnNamesWithValues(expression, row, foundColumnNames);
+      try {
+        const result = math.evaluate(rowSpecificExpression);
+        if(result){
+          counter++
+        }
+      } catch (error) {
+        console.error(`Error evaluating expression for row: ${error}`);
+        errorOccured = true
+      }
+    });
+    if(errorOccured){
+      errorCounter++
+    } else{
+      schedule.criteriums[expression] = counter;
     }
-    if(!result){
-      counter++
-    }
-  })
-
+  });
+  console.log(errorCounter)
+  if (errorCounter == Object.keys(schedulesData).length){
+    alert("Ocorreu um erro e por isso não foram adicionados novos critérios por favor corriga a formula!")
+  }
+  return schedulesData
 
 }
 
@@ -282,17 +308,16 @@ function extractColumnNamesFromExpression(expression, allColumnNames) {
   return foundColumnNames;
 }
 
-function substituteColumnNamesWithValues(results, expression, row, columnNames) {
+function substituteColumnNamesWithValues(expression, row, columnNames) {
   let modifiedExpression = expression;
 
   columnNames.forEach(columnName => {
-    const value = results.data[row][columnName]
+    const value = row[columnName];
     modifiedExpression = modifiedExpression.replace(new RegExp(columnName, 'g'), `"${value}"`);
   });
-
+  console.log(modifiedExpression)
   return modifiedExpression;
 }
-
 
 function evaluateDynamicTextCriterium(schedulesData, column, inputText) {
   // Generate the field name dynamically based on column and inputText

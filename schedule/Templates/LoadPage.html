@@ -182,8 +182,10 @@
 
     // Submeter Critério dinamico em formula
     formulaSubmit.addEventListener("click", () => {
-      console.log(criteriumFormulaInputValue.value)
-      evaluateDynamicFormulaCriterium(results, criteriumFormulaInputValue.value)
+      //console.log(criteriumFormulaInputValue.value)
+      schedulesData = evaluateDynamicFormulaCriterium(schedulesData, criteriumFormulaInputValue.value)
+      console.log(schedulesData)
+      createTabulator(schedulesData)
       //Fazer Update ao Tabulator
     })
 
