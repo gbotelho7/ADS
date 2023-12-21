@@ -410,5 +410,38 @@ function createTabulator(schedulesData){
     layout: "fitColumns",
     // Add any other configurations you need
   });
+
+  // Create FusionCharts data
+  const fusionChartData = {
+    chart: {
+      caption: "Criteria for Schedules",
+      xAxisName: "Criteriums",
+      yAxisName: "Values",
+      theme: "fusion",
+    },
+    categories: [
+      {
+        category: criteria.map((criterion) => ({ label: criterion })),
+      },
+    ],
+    dataset: scheduleIds.map((id) => ({
+      seriesname: `Schedule ${id}`,
+      data: criteria.map((criterion) => ({
+        value: schedulesData[id].criteriums[criterion] || 0,
+      })),
+    })),
+  };
+
+  // Render FusionCharts
+  FusionCharts.ready(function () {
+    new FusionCharts({
+      type: "msline",
+      renderAt: "chart-container",
+      width: "100%",
+      height: "400",
+      dataFormat: "json",
+      dataSource: fusionChartData,
+    }).render();
+  });
   
 }
