@@ -474,7 +474,7 @@ function createTabulator(schedulesData){
   }
 
   const roomUsageByStartTime = countRoomUsageByStartTime(schedulesData)
-  // console.log(roomUsageByStartTime)
+  console.log(roomUsageByStartTime)
     // Converta os dados para o formato esperado pela FusionCharts
   const heatMapChartData = [];
   for (var key in roomUsageByStartTime) {
