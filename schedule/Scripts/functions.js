@@ -99,7 +99,7 @@ function parseURLs(urls, e, csvDataDiv, hiddenDiv) {
 
 // Guarda os diferentes dados
 function saveSettings(){
-  let settings = { "csvSeparator": csvSeparator, "hourFormat": hourFormat, "dateFormat": dateFormat, "dateColumns": dateColumns, "hourColumns": hourColumns, "dictionary": dictionary};
+  let settings = { "csvSeparator": csvSeparator, "hourFormat": hourFormat, "dateFormat": dateFormat, "dateColumns": dateColumns, "hourColumns": hourColumns, "dictionary": dictionary}; //dictionary
   localStorage.setItem('executionData', JSON.stringify(settings)); 
 }
 
@@ -178,6 +178,7 @@ function criteriumOvercrowding(results){
   }  
   arr.push(countOvercrowding)
   arr.push(countTotalStudentsOvercrowding)
+  console.log(arr)
   return arr
   //console.log("Total Overcrowdings: " + countOvercrowding)
   //console.log("Total of Students With no place in Classes with OverCrowding: " + countTotalStudentsOvercrowding)
@@ -188,24 +189,26 @@ function criteriumOverlaping(results){
   let classesByDate = {};
 
   for (let i = 0; i < results.data.length; i++) {
-    if (!classesByDate[results.data[i]['Dia']]) {
-      classesByDate[results.data[i]['Dia']] = [];
+    if (!classesByDate[results.data[i][dictionary['Dia']]]) {
+      classesByDate[results.data[i][dictionary['Dia']]] = [];
     }
-    classesByDate[results.data[i]['Dia']].push(results.data[i]);
+    classesByDate[results.data[i][dictionary['Dia']]].push(results.data[i]);
   }
-
   let countOverlaping = 0
-  Object.keys(classesByDate).forEach((date) => {
-    let classesForDate = classesByDate[date];
-    for (let i = 0; i < classesForDate.length - 1; i++) {
-      for (let j = i + 1; j < classesForDate.length; j++) {
-        if((classesForDate[i][dictionary['Início']] < classesForDate[j][dictionary['Fim']] && classesForDate[i][dictionary['Fim']] > classesForDate[j][dictionary['Início']]) ||
-          (classesForDate[j][dictionary['Início']] < classesForDate[i][dictionary['Fim']] && classesForDate[j][dictionary['Fim']] > classesForDate[i][dictionary['Início']])){
-            countOverlaping++
+  console.log(classesByDate)
+  if(classesByDate !== 1){
+    Object.keys(classesByDate).forEach((date) => {
+      let classesForDate = classesByDate[date];
+      for (let i = 0; i < classesForDate.length - 1; i++) {
+        for (let j = i + 1; j < classesForDate.length; j++) {
+          if((classesForDate[i][dictionary['Início']] < classesForDate[j][dictionary['Fim']] && classesForDate[i][dictionary['Fim']] > classesForDate[j][dictionary['Início']]) ||
+            (classesForDate[j][dictionary['Início']] < classesForDate[i][dictionary['Fim']] && classesForDate[j][dictionary['Fim']] > classesForDate[i][dictionary['Início']])){
+              countOverlaping++
+          }
         }
       }
-    }
-  });
+    });
+  }
   // console.log("Total of Overlapings: " + countOverlaping)
   return countOverlaping
 }
@@ -217,7 +220,7 @@ function criteriumClassRequisites(results){
   let countNoClassroom = 0
   for(let i = 0; i < results.data.length; i++){
     let askedRequisites = results.data[i][dictionary['Características da sala pedida para a aula']]
-    let roomName = results.data[i]['Sala da aula'];
+    let roomName = results.data[i][dictionary['Sala da aula']];
     if(roomName in classRoomDictionary){
       if(!classRoomDictionary[roomName].includes(askedRequisites)){
         countRequisitesNotMet++
@@ -387,6 +390,42 @@ function orderSchedulesData(schedulesData){
   return sortedSchedulesData
 }
 
+function roundToNearestHour(time) {
+  const date = new Date(`2023-01-01T${time}`);
+  date.setMinutes(0);
+  date.setSeconds(0);
+  date.setMilliseconds(0);
+  return date.toTimeString().slice(0, 8);
+}
+
+function countRoomUsageByStartTime(schedulesData) {
+  const roomUsageByStartTime = {};
+
+  // Iterar sobre cada horário
+  Object.keys(schedulesData).forEach(scheduleId => {
+    const schedule = schedulesData[scheduleId];
+    const scheduleData = schedule.data;
+
+    // Iterar sobre cada linha de dados no horário
+    scheduleData.forEach(row => {
+      const startTime = row['Início']
+      const roomName = row['Sala da aula'];
+
+      // Verificar se a sala e a hora de início estão presentes nos dados
+      if (startTime && roomName) {
+        const roundedStartTime = roundToNearestHour(startTime);
+        // Criar um identificador único para a combinação sala + hora de início
+        const key = `${roomName}/${roundedStartTime}`;
+
+        // Incrementar o contador para essa combinação
+        roomUsageByStartTime[key] = (roomUsageByStartTime[key] || 0) + 1;
+      }
+    });
+  });
+
+  return roomUsageByStartTime;
+}
+
 
 // Recebe todos os dados e cria a tabela do Tabulator
 function createTabulator(schedulesData){
@@ -396,7 +435,7 @@ function createTabulator(schedulesData){
   const criteria = Object.keys(firstSchedule.criteriums);
   
   const columns = [
-    {formatter:"rowSelection", title:"Selecionado", align:"center", headerSort:false},
+    {formatter:"rowSelection", title:"Selecionado", headerSort:false},
     { title: "Horários", field: "scheduleId" }, // Column for Schedule ID
     // Columns for each criterium
     ...criteria.map((criterion) => ({
@@ -422,8 +461,7 @@ function createTabulator(schedulesData){
     selectable: 1
     // Add any other configurations you need
   });
-
-  // 
+ 
   const lineChartData = {
     chart: {
       caption: "Criteria for Schedules",
@@ -444,82 +482,102 @@ function createTabulator(schedulesData){
     })),
   };
 
- 
-
-  function countRoomUsageByStartTime(schedulesData) {
-    const roomUsageByStartTime = {};
-  
-    // Iterar sobre cada horário
-    Object.keys(schedulesData).forEach(scheduleId => {
-      const schedule = schedulesData[scheduleId];
-      const scheduleData = schedule.data;
-  
-      // Iterar sobre cada linha de dados no horário
-      scheduleData.forEach(row => {
-        const startTime = row['Início']
-        const roomName = row['Sala da aula'];
-  
-        // Verificar se a sala e a hora de início estão presentes nos dados
-        if (startTime && roomName) {
-          // Criar um identificador único para a combinação sala + hora de início
-          const key = `${roomName}-${startTime}`;
-  
-          // Incrementar o contador para essa combinação
-          roomUsageByStartTime[key] = (roomUsageByStartTime[key] || 0) + 1;
-        }
-      });
-    });
-  
-    return roomUsageByStartTime;
-  }
-
   const roomUsageByStartTime = countRoomUsageByStartTime(schedulesData)
   // console.log(roomUsageByStartTime)
     // Converta os dados para o formato esperado pela FusionCharts
   const heatMapChartData = [];
   for (var key in roomUsageByStartTime) {
-      var roomName = key.split('-')[0];
-      var startTime = key.split('-')[1];
+      var roomName = key.split('/')[0];
+      var startTime = key.split('/')[1];
       heatMapChartData.push({
-          "rowid": roomName,
-          "columnid": startTime,
-          "value": roomUsageByStartTime[key]
+        "rowid":  startTime,
+        "columnid":roomName,
+        "value": `${roomUsageByStartTime[key]}`
       });
   }
-  console.log(heatMapChartData[0])
+  heatMapChartData.sort((a, b) => {
+    const timeA = a.rowid;
+    const timeB = b.rowid;
+    return timeA.localeCompare(timeB);
+  });
+  console.log(JSON.stringify(heatMapChartData))
 
+  const values = heatMapChartData.map(item => parseInt(item.value, 10));
 
+  // Step 2: Find the maximum and minimum values
+  const maxValue = Math.max(...values);
+  const minValue = Math.min(...values);
+
+  // Step 3: Calculate the interval
+  const interval = (maxValue - minValue) / 4;
+
+  // Step 4: Define variables for starting values of each category
+  const categoryStart1 = minValue;
+  const categoryStart2 = minValue + interval;
+  const categoryStart3 = minValue + 2 * interval;
+  const categoryStart4 = minValue + 3 * interval;
+
+  console.log(categoryStart1, categoryStart2, categoryStart3, minValue, maxValue)
 
   // Configurações do gráfico
   const heatMapConfig = {
     type: 'heatmap',
     renderAt: 'heatmap-container',
-    width: '700',
-    height: '400',
+    width: '1400',
+    height: '800',
     dataFormat: 'json',
     dataSource: {
-      chart: {
+      "chart": {
         caption: 'Heatmap de Uso de Sala',
         subcaption: 'Por hora de início',
         theme: 'fusion',
       },
-      data: heatMapChartData,
-    },
+      "dataset": [
+          {
+            "data": heatMapChartData
+          }
+        ],
+      "colorrange": {
+        "gradient": "1",
+        "startlabel": "Muito Bom",
+        "code": "00A000",
+        "color": [
+            {
+                "code": "00C000",
+                "minvalue": `${categoryStart1}`,
+                "maxvalue": `${categoryStart2}`,
+                "label": "Bom"
+            },
+            {
+                "code": "B0B000",
+                "minvalue": `${categoryStart2}`,
+                "maxvalue": `${categoryStart3}`,
+                "label": "Médio"
+            },
+            {
+                "code": "FFA040",
+                "minvalue": `${categoryStart3}`,
+                "maxvalue": `${categoryStart4}`,
+                "label": "Mau"
+            },
+            {
+              "code": "A02020",
+              "minvalue": `${categoryStart4}`,
+              "maxvalue": `${maxValue}`,
+              "label": "Muito Mau"
+          }
+        ]
+      }
+    }
   };
-
-
 
   console.log("Length of heatMapChartData:", heatMapChartData.length);
 
-
-
-
     // Imprimir os dados no console
-  console.log("Dados do heatMapChartData:");
+  /*console.log("Dados do heatMapChartData:");
   heatMapChartData.forEach(item => {
       console.log(`Row ID: ${item.rowid}, Column ID: ${item.columnid}, Value: ${item.value}`);
-  });
-
+  });*/
 
 
    // Render FusionCharts
