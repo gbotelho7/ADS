@@ -501,15 +501,13 @@ function createTabulator(schedulesData){
       chart: {
         caption: 'Heatmap de Uso de Sala',
         subcaption: 'Por hora de início',
-        theme: 'fusion'
+        theme: 'fusion',
       },
-      dataset: [
-        {
-          data: heatMapChartData,
-        },
-      ],
+      data: heatMapChartData,
     },
   };
+
+
 
   console.log("Length of heatMapChartData:", heatMapChartData.length);
 
@@ -522,26 +520,7 @@ function createTabulator(schedulesData){
       console.log(`Row ID: ${item.rowid}, Column ID: ${item.columnid}, Value: ${item.value}`);
   });
 
-  // // Configurações do gráfico
-  // const heatMapConfig = {
-  //     type: 'heatmap',
-  //     renderAt: 'heatmap-container',
-  //     width: '700',
-  //     height: '400',
-  //     dataFormat: 'json',
-  //     dataSource: {
-  //         chart: {
-  //             caption: 'Heatmap de Uso de Sala',
-  //             subcaption: 'Por hora de início',
-  //             showvalues: '$value',
-  //             plottooltext: '$rowid às $columid: $value vezes',
-  //             theme: 'fusion'
-  //         },
-  //         rows: {
-  //             row: heatMapChartData
-  //         }
-  //     }
-  // };
+
 
    // Render FusionCharts
    FusionCharts.ready(function () {
@@ -553,15 +532,11 @@ function createTabulator(schedulesData){
       dataFormat: "json",
       dataSource: lineChartData,
     }).render();
-    new FusionCharts(heatMapConfig).render();
+    try {
+      new FusionCharts(heatMapConfig).render();
+    } catch (error) {
+        console.error("Erro ao renderizar mapa de calor:", error);
+    }
   });
-
-
-
-
-
-
-
-
   
 }
