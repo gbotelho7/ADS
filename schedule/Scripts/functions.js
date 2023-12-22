@@ -444,8 +444,78 @@ function createTabulator(schedulesData){
     })),
   };
 
-  // Render FusionCharts
-  FusionCharts.ready(function () {
+ 
+
+  function countRoomUsageByStartTime(schedulesData) {
+    const roomUsageByStartTime = {};
+  
+    // Iterar sobre cada horário
+    Object.keys(schedulesData).forEach(scheduleId => {
+      const schedule = schedulesData[scheduleId];
+      const scheduleData = schedule.data;
+  
+      // Iterar sobre cada linha de dados no horário
+      scheduleData.forEach(row => {
+        const startTime = row['Início']
+        const roomName = row['Sala da aula'];
+  
+        // Verificar se a sala e a hora de início estão presentes nos dados
+        if (startTime && roomName) {
+          // Criar um identificador único para a combinação sala + hora de início
+          const key = `${roomName}-${startTime}`;
+  
+          // Incrementar o contador para essa combinação
+          roomUsageByStartTime[key] = (roomUsageByStartTime[key] || 0) + 1;
+        }
+      });
+    });
+  
+    return roomUsageByStartTime;
+  }
+
+  const roomUsageByStartTime = countRoomUsageByStartTime(schedulesData)
+  console.log(roomUsageByStartTime)
+    // Converta os dados para o formato esperado pela FusionCharts
+  const heatMapChartData = [];
+  for (var key in roomUsageByStartTime) {
+      var roomName = key.split('-')[0];
+      var startTime = key.split('-')[1];
+      heatMapChartData.push({
+          "rowid": roomName,
+          "columnid": startTime,
+          "value": roomUsageByStartTime[key]
+      });
+  }
+
+//   // Imprimir os dados no console
+// console.log("Dados do heatMapChartData:");
+// heatMapChartData.forEach(item => {
+//     console.log(`Row ID: ${item.rowid}, Column ID: ${item.columnid}, Value: ${item.value}`);
+// });
+
+  // Configurações do gráfico
+  const heatMapConfig = {
+      type: 'heatmap',
+      renderAt: 'heatmap-container',
+      width: '700',
+      height: '400',
+      dataFormat: 'json',
+      dataSource: {
+          chart: {
+              caption: 'Heatmap de Uso de Sala',
+              subcaption: 'Por hora de início',
+              showvalues: '$value',
+              plottooltext: '$rowid às $columid: $value vezes',
+              theme: 'fusion'
+          },
+          rows: {
+              row: heatMapChartData
+          }
+      }
+  };
+
+   // Render FusionCharts
+   FusionCharts.ready(function () {
     new FusionCharts({
       type: "msline",
       renderAt: "chart-container",
@@ -454,7 +524,20 @@ function createTabulator(schedulesData){
       dataFormat: "json",
       dataSource: lineChartData,
     }).render();
+    new FusionCharts(heatMapConfig).render();
   });
+
+
+
+  // // Renderiza o gráfico
+  // FusionCharts.ready(function() {
+  //     console.log('Construindo FusionCharts...');
+  //     const chart = new FusionCharts(heatMapConfig);
+  //     console.log('FusionChart construido');
+  //     chart.render();
+  // });
+
+
 
   
 }
