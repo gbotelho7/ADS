@@ -580,6 +580,8 @@ function createTabulator(schedulesData){
   });*/
 
 
+
+
    // Render FusionCharts
    FusionCharts.ready(function () {
     new FusionCharts({
@@ -596,5 +598,120 @@ function createTabulator(schedulesData){
         console.error("Erro ao renderizar mapa de calor:", error);
     }
   });
-  
+
+
+
+  // Função para criar e exibir o diagrama de chord para sobrelotação de aulas
+function createChordDiagram(schedulesData) {
+  // Preparar dados para o diagrama de chord
+  const chordData = prepareChordData(schedulesData);
+
+  // Configurações do gráfico de chord
+  const chordConfig = {
+    width: 800,
+    height: 800,
+    margin: { top: 20, right: 20, bottom: 20, left: 20 },
+    padAngle: 0.02,
+    sortGroups: d3.descending,
+    sortSubgroups: d3.descending,
+  };
+
+  try {
+    const chord = d3.chord()
+      .padAngle(chordConfig.padAngle)
+      .sortGroups(chordConfig.sortGroups)
+      .sortSubgroups(chordConfig.sortSubgroups);
+
+    const chordLayout = chord(chordData.matrix);
+
+    const svg = d3.select('#chord-diagram')
+      .append('svg')
+      .attr('width', chordConfig.width)
+      .attr('height', chordConfig.height)
+      .append('g')
+      .attr('transform', `translate(${chordConfig.width / 2},${chordConfig.height / 2})`);
+
+    // Use chordLayout to draw the diagram
+    // Refer to d3-chord documentation for more details: https://observablehq.com/@d3/chord-diagram
+
+  } catch (error) {
+    console.error("Error creating chord diagram:", error);
+  }
+}
+
+
+
+// Função para preparar os dados para o diagrama de chord
+function prepareChordData(schedulesData) {
+  console.log("Preparing data for chord diagram...");
+  // Estrutura de dados para o diagrama de chord
+  const chordData = {
+    matrix: [],
+    entities: [],
+  };
+
+  // Mapear os turnos ou turmas para as entidades
+  const scheduleIds = Object.keys(schedulesData);
+  chordData.entities = scheduleIds.map((scheduleId) => `Schedule ${scheduleId}`);
+
+  // Preencher a matriz com o número de salas de aula sobrelotadas compartilhadas
+  chordData.matrix = scheduleIds.map((scheduleId) => {
+    const connections = new Array(scheduleIds.length).fill(0);
+
+    scheduleIds.forEach((otherScheduleId, index) => {
+      const sharedOvercrowdedRooms = calculateSharedOvercrowdedRooms(
+        schedulesData[scheduleId].criteriums['Overcrowding'][1],
+        schedulesData[otherScheduleId].criteriums['Overcrowding'][1]
+      );
+      connections[index] = sharedOvercrowdedRooms;
+    });
+
+    return connections;
+  });
+
+  console.log("Chord data prepared:", chordData);
+
+  return chordData;
+}
+
+// Função para calcular o número de salas de aula sobrelotadas compartilhadas
+function calculateSharedOvercrowdedRooms(rooms1, rooms2) {
+  const sharedRooms = rooms1.filter((room) => rooms2.includes(room));
+  return sharedRooms.length;
+}
+
+
+
+//   // Função para criar e exibir o diagrama de chord para sobrelotação de aulas
+// function createChordDiagram(schedulesData) {
+//   // Preparar dados para o diagrama de chord
+//   const chordData = prepareChordData(schedulesData);
+
+//   // Configurações do gráfico de chord
+//   const chordConfig = {
+//     width: 800,
+//     height: 800,
+//     margin: { top: 20, right: 20, bottom: 20, left: 20 },
+//     padAngle: 0.02,
+//     sortGroups: d3.descending,
+//     sortSubgroups: d3.descending,
+//   };
+
+//   try {
+//     const chord = new Chord(chordData, chordConfig);
+//     chord.draw('chord-diagram');
+//   } catch (error) {
+//     console.error("Error creating chord diagram:", error);
+//   }
+// }
+
+
+
+// Chamar a função para criar o diagrama de chord
+createChordDiagram(schedulesData);
+
+
+
+
+
 }
