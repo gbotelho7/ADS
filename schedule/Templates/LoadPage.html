@@ -141,8 +141,9 @@
       </div>
     </div>
     <div id="chart-container"></div>
-    <div id="heatmap-container"></div>
+    <div id="line-chart-container"></div>
     <div id="graphs"></div>
+    <div id="download-container"></div>
   
   <script>
 
@@ -164,7 +165,9 @@
     const dynamicCriteriums = document.getElementById('dynamicCriteriums');
     const graphs = document.getElementById('graphs');
     const chartContainer = document.getElementById('chart-container');
-
+    const lineChartContainer = document.getElementById('line-chart-container');
+    const downloadContainer = document.getElementById('download-container');
+    
     const formulaSubmit = document.getElementById("criteriumFormulaSubmit") 
     const textSubmit = document.getElementById("criteriumTextSubmit")
 
@@ -192,16 +195,18 @@
       //console.log(criteriumFormulaInputValue.value)
       schedulesData = evaluateDynamicFormulaCriterium(schedulesData, criteriumFormulaInputValue.value)
       console.log(schedulesData)
-      createTabulator(schedulesData)
-      //Fazer Update ao Tabulator
+      createTabulator(schedulesData, graphs, downloadContainer)
+      createLineChart()
+      //TODO Fazer Update aos Graficos
     })
 
     // Submeter Critério dinamico de texto 
     textSubmit.addEventListener("click", () => {
       schedulesData = evaluateDynamicTextCriterium(schedulesData, dropdown.value, criteriumTextInputValue.value)
       console.log(schedulesData)
-      createTabulator(schedulesData)
-      //Fazer Update ao Tabulator
+      createTabulator(schedulesData, graphs, downloadContainer)
+      createLineChart()
+      //TODO Fazer Update aos Graficos
     })
 
     //Fazer aparecer o formulário das configurações
@@ -263,7 +268,8 @@
             if(filesProcessed === files.length){
               dynamicCriteriums.style.display = "block"
               schedulesData = orderSchedulesData(schedulesData)
-              createTabulator(schedulesData)
+              createTabulator(schedulesData, graphs, downloadContainer)
+              createLineChart()
             }
           }
         });
@@ -286,8 +292,9 @@
             console.log(classRoomDictionary) // Dicionário com as salas e as suas caracteristicas
             dynamicCriteriums.style.display = "none"
             graphs.innerHTML = ""
-            graphs.className = ""
             chartContainer.innerHTML = ""
+            lineChartContainer.innerHTML = ""
+            downloadContainer.innerHTML = ""
           }
         });
       saveSettings()
