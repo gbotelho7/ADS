@@ -398,37 +398,8 @@ function roundToNearestHour(time) {
   return date.toTimeString().slice(0, 8);
 }
 
-function countRoomUsageByStartTime(schedulesData) {
-  const roomUsageByStartTime = {};
-
-  // Iterar sobre cada horário
-  Object.keys(schedulesData).forEach(scheduleId => {
-    const schedule = schedulesData[scheduleId];
-    const scheduleData = schedule.data;
-
-    // Iterar sobre cada linha de dados no horário
-    scheduleData.forEach(row => {
-      const startTime = row['Início']
-      const roomName = row['Sala da aula'];
-
-      // Verificar se a sala e a hora de início estão presentes nos dados
-      if (startTime && roomName) {
-        const roundedStartTime = roundToNearestHour(startTime);
-        // Criar um identificador único para a combinação sala + hora de início
-        const key = `${roomName}/${roundedStartTime}`;
-
-        // Incrementar o contador para essa combinação
-        roomUsageByStartTime[key] = (roomUsageByStartTime[key] || 0) + 1;
-      }
-    });
-  });
-
-  return roomUsageByStartTime;
-}
-
-
 // Recebe todos os dados e cria a tabela do Tabulator
-function createTabulator(schedulesData){
+function createTabulator(schedulesData, graphs, downloadContainer){
   const scheduleIds = Object.keys(schedulesData);
 
   const firstSchedule = schedulesData[scheduleIds[0]];
@@ -436,8 +407,7 @@ function createTabulator(schedulesData){
   
   const columns = [
     {formatter:"rowSelection", title:"Selecionado", headerSort:false},
-    { title: "Horários", field: "scheduleId" }, // Column for Schedule ID
-    // Columns for each criterium
+    { title: "Horários", field: "scheduleId" },
     ...criteria.map((criterion) => ({
       title: criterion,
       field: criterion,
@@ -452,16 +422,68 @@ function createTabulator(schedulesData){
     return rowData;
   });
 
-  console.log(tableData)
-
-  table = new Tabulator("#graphs", {
+  table = new Tabulator("#chart-container", {
     data: tableData,
     columns: columns,
     layout: "fitColumns",
-    selectable: 1
-    // Add any other configurations you need
+    selectable: 1,
   });
- 
+
+  table.on("rowSelectionChanged", function(data, rows, selected, deselected){ //TODO Terminar
+    if(data.length !== 0){
+      let selectedScheduleData  = schedulesData[data[0]['scheduleId']].data
+      console.log(data)
+      createHeatMap(selectedScheduleData)
+      insertDownloadButton(downloadContainer, selectedScheduleData);
+    }
+    else{
+      graphs.innerHTML = ""
+      downloadContainer.innerHTML = ""
+    }
+  });
+}
+
+function insertDownloadButton(downloadContainer, selectedScheduleData, ) {
+  const buttonJSON = document.createElement('button');
+  buttonJSON.textContent = 'Download JSON';
+  buttonJSON.onclick = function(){
+    downloadFile(selectedScheduleData, false);
+  };
+  downloadContainer.appendChild(buttonJSON);
+  const buttonCSV = document.createElement('button');
+  buttonCSV.textContent = 'Download CSV';
+  buttonCSV.onclick = function(){
+    downloadFile(selectedScheduleData, true);
+  };
+  downloadContainer.appendChild(buttonCSV);
+}
+
+function downloadFile(selectedScheduleData, csv) {
+  let fileData, blob, filename;
+  const link = document.createElement('a');
+  if(csv === true){
+    const headers = Object.keys(selectedScheduleData[0]);
+    const dataRows = selectedScheduleData.map(row => headers.map(header => row[header]).join(','));
+    fileData = [headers.join(','), ...dataRows].join('\n');
+    blob = new Blob([fileData], { type: 'text/csv' });
+    filename = 'data.csv';
+  } else{
+    fileData = JSON.stringify(selectedScheduleData, null, 2);
+    blob = new Blob([fileData], { type: 'application/json' });
+    filename = 'data.json';
+  }
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+
+  // Remove the link from the body
+  document.body.removeChild(link);
+}
+
+function createLineChart(){
+  const scheduleIds = Object.keys(schedulesData);
+  const criteria = Object.keys(schedulesData[scheduleIds[0]].criteriums);
   const lineChartData = {
     chart: {
       caption: "Criteria for Schedules",
@@ -482,7 +504,39 @@ function createTabulator(schedulesData){
     })),
   };
 
-  const roomUsageByStartTime = countRoomUsageByStartTime(schedulesData)
+  new FusionCharts({
+    type: "msline",
+    renderAt: "line-chart-container",
+    width: "100%",
+    height: "400",
+    dataFormat: "json",
+    dataSource: lineChartData,
+  }).render();
+}
+
+function countRoomUsageByStartTime(scheduleData) {
+  const roomUsageByStartTime = {};
+  // Iterar sobre cada linha de dados no horário
+  scheduleData.forEach(row => {
+    const startTime = row[dictionary['Início']]
+    const roomName = row[dictionary['Sala da aula']]; 
+
+    // Verificar se a sala e a hora de início estão presentes nos dados
+    if (startTime && roomName) {
+      const roundedStartTime = roundToNearestHour(startTime);
+      // Criar um identificador único para a combinação sala + hora de início
+      const key = `${roomName}/${roundedStartTime}`;
+
+      // Incrementar o contador para essa combinação
+      roomUsageByStartTime[key] = (roomUsageByStartTime[key] || 0) + 1;
+    }
+  });
+
+  return roomUsageByStartTime;
+}
+
+function createHeatMap(selectedScheduleData){
+  const roomUsageByStartTime = countRoomUsageByStartTime(selectedScheduleData)
   console.log(roomUsageByStartTime)
     // Converta os dados para o formato esperado pela FusionCharts
   const heatMapChartData = [];
@@ -522,8 +576,8 @@ function createTabulator(schedulesData){
   // Configurações do gráfico
   const heatMapConfig = {
     type: 'heatmap',
-    renderAt: 'heatmap-container',
-    width: '1400',
+    renderAt: 'graphs',
+    width: '100%',
     height: '800',
     dataFormat: 'json',
     dataSource: {
@@ -573,25 +627,8 @@ function createTabulator(schedulesData){
 
   console.log("Length of heatMapChartData:", heatMapChartData.length);
 
-    // Imprimir os dados no console
-  /*console.log("Dados do heatMapChartData:");
-  heatMapChartData.forEach(item => {
-      console.log(`Row ID: ${item.rowid}, Column ID: ${item.columnid}, Value: ${item.value}`);
-  });*/
-
-
-
-
    // Render FusionCharts
    FusionCharts.ready(function () {
-    new FusionCharts({
-      type: "msline",
-      renderAt: "chart-container",
-      width: "100%",
-      height: "400",
-      dataFormat: "json",
-      dataSource: lineChartData,
-    }).render();
     try {
       new FusionCharts(heatMapConfig).render();
     } catch (error) {
@@ -705,7 +742,7 @@ function calculateSharedOvercrowdedRooms(rooms1, rooms2) {
 
 
 // Chamar a função para criar o diagrama de chord
-createChordDiagram(schedulesData);
+//createChordDiagram(schedulesData);
 
 
 
