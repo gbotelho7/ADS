@@ -434,6 +434,7 @@ function createTabulator(schedulesData, graphs, downloadContainer){
       let selectedScheduleData  = schedulesData[data[0]['scheduleId']].data
       console.log(data)
       createHeatMap(selectedScheduleData)
+      createChordDiagram(selectedScheduleData)
       insertDownloadButton(downloadContainer, selectedScheduleData);
     }
     else{
@@ -638,65 +639,103 @@ function createHeatMap(selectedScheduleData){
 
 
 
-  // Função para criar e exibir o diagrama de chord para sobrelotação de aulas
-function createChordDiagram(schedulesData) {
-  // Preparar dados para o diagrama de chord
-  const chordData = prepareChordData(schedulesData);
+  function createChordDiagram(schedulesData) {
+    // Preparar dados para o diagrama de chord
+    const chordData = prepareChordData(schedulesData);
+  
+    // Configurações do gráfico de chord
+    const chordConfig = {
+      width: 800,
+      height: 800,
+      margin: { top: 20, right: 20, bottom: 20, left: 20 },
+      padAngle: 0.02,
+      sortGroups: d3.descending,
+      sortSubgroups: d3.descending,
+    };
+  
+    // Selecione o elemento SVG para o diagrama de chord
+    const svg = d3.select('#chord-diagram')
+      .append('svg')
+      .attr('width', chordConfig.width)
+      .attr('height', chordConfig.height)
+      .append('g')
+      .attr('transform', `translate(${chordConfig.width / 2},${chordConfig.height / 2})`);
+  
+    try {
+      // Crie o layout de chord usando d3-chord
+      const chordLayout = d3.chord()
+        .padAngle(chordConfig.padAngle)
+        .sortGroups(chordConfig.sortGroups)
+        .sortSubgroups(chordConfig.sortSubgroups);
+  
+      const chords = chordLayout(chordData.matrix);
+  
+      // Configure e desenhe os arcos
+      svg.selectAll('path')
+        .data(chords)
+        .enter()
+        .append('path')
+        .attr('d', d3.ribbon().radius(200))
+        .style('fill', 'steelblue')
+        .style('stroke', 'black');
+  
+    } catch (error) {
+      console.error("Error creating chord diagram:", error);
+    }
+  }
 
-  // Configurações do gráfico de chord
-  const chordConfig = {
-    width: 800,
-    height: 800,
-    margin: { top: 20, right: 20, bottom: 20, left: 20 },
-    padAngle: 0.02,
-    sortGroups: d3.descending,
-    sortSubgroups: d3.descending,
-  };
-
-  const chord = d3.chord()
-    .padAngle(chordConfig.padAngle)
-    .sortGroups(chordConfig.sortGroups)
-    .sortSubgroups(chordConfig.sortSubgroups);
-
-  const chordLayout = chord(chordData.matrix);
-
-  const svg = d3.select('#chord-diagram')
-    .append('svg')
-    .attr('width', chordConfig.width)
-    .attr('height', chordConfig.height)
-    .append('g')
-    .attr('transform', `translate(${chordConfig.width / 2},${chordConfig.height / 2})`);
-
-  // Use chordLayout to draw the diagram
-  // Refer to d3-chord documentation for more details: https://observablehq.com/@d3/chord-diagram
-
-
-}
-
-
-
-// Função para preparar os dados para o diagrama de chord
 function prepareChordData(schedulesData) {
   console.log("Preparing data for chord diagram...");
+
+  // Criar um objeto para contar o número total de sobrelotações entre pares de cursos
+  const overcrowdingCounts = {};
+
+  // Iterar sobre os dados de horários
+  Object.keys(schedulesData).forEach((scheduleId) => {
+    const overcrowdingData = schedulesData[scheduleId].criteriums['Overcrowding'];
+
+        // Add a check for the existence of 'Overcrowding' property
+    if (overcrowdingData) {
+      // Proceed with your existing code that uses overcrowdingData
+    } else {
+      // Handle the case when 'Overcrowding' property is not present
+      console.error("Overcrowding property is undefined for scheduleId:", scheduleId);
+    }
+    const courses = Object.keys(overcrowdingData[1]);
+
+    // Calcular as sobrelotações entre todos os pares de cursos
+    for (let i = 0; i < courses.length; i++) {
+      for (let j = i + 1; j < courses.length; j++) {
+        const coursePair = [courses[i], courses[j]].sort().join('-');
+        const count = overcrowdingData[1][courses[i]] + overcrowdingData[1][courses[j]];
+
+        // Adicionar ao contador total
+        overcrowdingCounts[coursePair] = (overcrowdingCounts[coursePair] || 0) + count;
+      }
+    }
+  });
+
+  // Ordenar os pares de cursos por contagem decrescente
+  const sortedPairs = Object.keys(overcrowdingCounts).sort((a, b) => overcrowdingCounts[b] - overcrowdingCounts[a]);
+
+  // Selecionar os 10 principais pares
+  const topPairs = sortedPairs.slice(0, 10);
+
   // Estrutura de dados para o diagrama de chord
   const chordData = {
     matrix: [],
     entities: [],
   };
 
-  // Mapear os turnos ou turmas para as entidades
-  const scheduleIds = Object.keys(schedulesData);
-  chordData.entities = scheduleIds.map((scheduleId) => `Schedule ${scheduleId}`);
+  // Mapear os pares de cursos para as entidades
+  chordData.entities = topPairs.map((pair) => pair.split('-'));
 
-  // Preencher a matriz com o número de salas de aula sobrelotadas compartilhadas
-  chordData.matrix = scheduleIds.map((scheduleId) => {
-    const connections = new Array(scheduleIds.length).fill(0);
+  // Preencher a matriz com o número de sobrelotações compartilhadas
+  chordData.matrix = topPairs.map((pair) => {
+    const connections = new Array(topPairs.length).fill(0);
 
-    scheduleIds.forEach((otherScheduleId, index) => {
-      const sharedOvercrowdedRooms = calculateSharedOvercrowdedRooms(
-        schedulesData[scheduleId].criteriums['Overcrowding'][1],
-        schedulesData[otherScheduleId].criteriums['Overcrowding'][1]
-      );
+    topPairs.forEach((otherPair, index) => {
+      const sharedOvercrowdedRooms = (pair === otherPair) ? overcrowdingCounts[pair] : 0;
       connections[index] = sharedOvercrowdedRooms;
     });
 
@@ -708,11 +747,50 @@ function prepareChordData(schedulesData) {
   return chordData;
 }
 
-// Função para calcular o número de salas de aula sobrelotadas compartilhadas
-function calculateSharedOvercrowdedRooms(rooms1, rooms2) {
-  const sharedRooms = rooms1.filter((room) => rooms2.includes(room));
-  return sharedRooms.length;
-}
+// Chamar a função para criar o diagrama de chord
+createChordDiagram(selectedScheduleData);
+
+
+
+
+// // Função para preparar os dados para o diagrama de chord
+// function prepareChordData(schedulesData) {
+//   console.log("Preparing data for chord diagram...");
+//   // Estrutura de dados para o diagrama de chord
+//   const chordData = {
+//     matrix: [],
+//     entities: [],
+//   };
+
+//   // Mapear os turnos ou turmas para as entidades
+//   const scheduleIds = Object.keys(schedulesData);
+//   chordData.entities = scheduleIds.map((scheduleId) => `Schedule ${scheduleId}`);
+
+//   // Preencher a matriz com o número de salas de aula sobrelotadas compartilhadas
+//   chordData.matrix = scheduleIds.map((scheduleId) => {
+//     const connections = new Array(scheduleIds.length).fill(0);
+
+//     scheduleIds.forEach((otherScheduleId, index) => {
+//       const sharedOvercrowdedRooms = calculateSharedOvercrowdedRooms(
+//         schedulesData[scheduleId].criteriums['Overcrowding'][1],
+//         schedulesData[otherScheduleId].criteriums['Overcrowding'][1]
+//       );
+//       connections[index] = sharedOvercrowdedRooms;
+//     });
+
+//     return connections;
+//   });
+
+//   console.log("Chord data prepared:", chordData);
+
+//   return chordData;
+// }
+
+// // Função para calcular o número de salas de aula sobrelotadas compartilhadas
+// function calculateSharedOvercrowdedRooms(rooms1, rooms2) {
+//   const sharedRooms = rooms1.filter((room) => rooms2.includes(room));
+//   return sharedRooms.length;
+// }
 
 
 
