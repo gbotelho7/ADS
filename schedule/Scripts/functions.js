@@ -616,27 +616,24 @@ function createChordDiagram(schedulesData) {
     sortSubgroups: d3.descending,
   };
 
-  try {
-    const chord = d3.chord()
-      .padAngle(chordConfig.padAngle)
-      .sortGroups(chordConfig.sortGroups)
-      .sortSubgroups(chordConfig.sortSubgroups);
+  const chord = d3.chord()
+    .padAngle(chordConfig.padAngle)
+    .sortGroups(chordConfig.sortGroups)
+    .sortSubgroups(chordConfig.sortSubgroups);
 
-    const chordLayout = chord(chordData.matrix);
+  const chordLayout = chord(chordData.matrix);
 
-    const svg = d3.select('#chord-diagram')
-      .append('svg')
-      .attr('width', chordConfig.width)
-      .attr('height', chordConfig.height)
-      .append('g')
-      .attr('transform', `translate(${chordConfig.width / 2},${chordConfig.height / 2})`);
+  const svg = d3.select('#chord-diagram')
+    .append('svg')
+    .attr('width', chordConfig.width)
+    .attr('height', chordConfig.height)
+    .append('g')
+    .attr('transform', `translate(${chordConfig.width / 2},${chordConfig.height / 2})`);
 
-    // Use chordLayout to draw the diagram
-    // Refer to d3-chord documentation for more details: https://observablehq.com/@d3/chord-diagram
+  // Use chordLayout to draw the diagram
+  // Refer to d3-chord documentation for more details: https://observablehq.com/@d3/chord-diagram
 
-  } catch (error) {
-    console.error("Error creating chord diagram:", error);
-  }
+
 }
 
 
