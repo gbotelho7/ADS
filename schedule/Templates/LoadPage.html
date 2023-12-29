@@ -34,6 +34,7 @@
     window.classRoomDictionary = {}; // Guarda o dicionario que relaciona as salas com as suas caracteristiscas
     window.schedulesData = [] // Guarda toda a estrutura e dados dos horarios
     window.table;
+    window.modifiableTable;
   </script>
     <h3>Ficheiro de Salas</h3>
     <input type="file" id="csvClassroomFileInput">
@@ -147,6 +148,7 @@
     <div id="heatmap-container"></div>
     <div id="chord-diagram"></div>
     <div id="graphs"></div>
+    <div id="modifiable-tabulator"></div>
     <div id="download-container"></div>
   
   <script>
@@ -171,6 +173,7 @@
     const chartContainer = document.getElementById('chart-container');
     const lineChartContainer = document.getElementById('line-chart-container');
     const downloadContainer = document.getElementById('download-container');
+    const modifiableTabulator = document.getElementById('modifiable-tabulator');
     
     const formulaSubmit = document.getElementById("criteriumFormulaSubmit") 
     const textSubmit = document.getElementById("criteriumTextSubmit")
@@ -199,7 +202,7 @@
       //console.log(criteriumFormulaInputValue.value)
       schedulesData = evaluateDynamicFormulaCriterium(schedulesData, criteriumFormulaInputValue.value)
       console.log(schedulesData)
-      createTabulator(schedulesData, graphs, downloadContainer)
+      createTabulator(schedulesData, graphs, downloadContainer, modifiableTabulator)
       createLineChart()
       //TODO Fazer Update aos Graficos
     })
@@ -208,7 +211,7 @@
     textSubmit.addEventListener("click", () => {
       schedulesData = evaluateDynamicTextCriterium(schedulesData, dropdown.value, criteriumTextInputValue.value)
       console.log(schedulesData)
-      createTabulator(schedulesData, graphs, downloadContainer)
+      createTabulator(schedulesData, graphs, downloadContainer, modifiableTabulator)
       createLineChart()
       //TODO Fazer Update aos Graficos
     })
@@ -263,16 +266,17 @@
           complete: function (results) {
             const scheduleId = `Horário ${i + 1}`
             const scheduleData = { data: results.data };
-            scheduleData['criteriums'] = evaluateCriteriums(results);
+            //scheduleData['criteriums'] = evaluateCriteriums(results, scheduleId); 
+            evaluateCriteriums(scheduleData)
             schedulesData[scheduleId] = scheduleData;
-
+            console.log(schedulesData)
             handleParsedData(results, i, e, csvDataDiv, hiddenDiv, false);
             updateDynamicCriteriums(dropdown)
             filesProcessed++
             if(filesProcessed === files.length){
               dynamicCriteriums.style.display = "block"
               schedulesData = orderSchedulesData(schedulesData)
-              createTabulator(schedulesData, graphs, downloadContainer)
+              createTabulator(schedulesData, graphs, downloadContainer, modifiableTabulator)
               createLineChart()
             }
           }
@@ -299,6 +303,7 @@
             chartContainer.innerHTML = ""
             lineChartContainer.innerHTML = ""
             downloadContainer.innerHTML = ""
+            modifiableTabulator.innerHTML = ""
           }
         });
       saveSettings()

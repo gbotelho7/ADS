@@ -150,22 +150,13 @@ function settingsToValue(listIds){
 
 //Função que recolhe os diferentes resultados dos critérios estaticos e coloca tudo dentro de um objeto
 function evaluateCriteriums(results){
-  let criteriumArray = {}
-  let criterium = []
-  criterium = criteriumOvercrowding(results)
-  criteriumArray['Overcrowding'] = criterium[0]
-  criteriumArray['OvercrowdingStudents'] = criterium[1];
-  criteriumArray['Overlaping'] = criteriumOverlaping(results)
-  criterium = criteriumClassRequisites(results) 
-  criteriumArray['RequisitesNotMet'] = criterium[0]
-  criteriumArray['NoClassroom'] = criterium[1];
-  return criteriumArray
+  results  = criteriumOvercrowding(results)
+  results = criteriumOverlaping(results)
+  results = criteriumClassRequisites(results)
 }
 
 // Função que avalia o criterio de sobrelotação e conta o numero de alunos em sobrelotação
 function criteriumOvercrowding(results){
-  let arr = []
-  // console.log(results.data[1]['Edifício']) //Como se acede a cada elemento
   let countOvercrowding = 0
   let countTotalStudentsOvercrowding = 0
   for(let i = 0; i < results.data.length; i++){
@@ -174,14 +165,17 @@ function criteriumOvercrowding(results){
     if(lotacao - inscritos < 0 ){
       countOvercrowding++
       countTotalStudentsOvercrowding += Math.abs(lotacao - inscritos)
+      results.data[i]['OverCrowding'] = true 
+    } else {
+      results.data[i]['OverCrowding'] = false
     }
-  }  
-  arr.push(countOvercrowding)
-  arr.push(countTotalStudentsOvercrowding)
-  console.log(arr)
-  return arr
-  //console.log("Total Overcrowdings: " + countOvercrowding)
-  //console.log("Total of Students With no place in Classes with OverCrowding: " + countTotalStudentsOvercrowding)
+  } 
+  let criteriumArray = {}
+  criteriumArray['Overcrowding'] =countOvercrowding
+  criteriumArray['OvercrowdingStudents'] = countTotalStudentsOvercrowding;
+
+  results['criteriums'] = criteriumArray
+  return results
 }
 
 // Função que avalia o critério de sobreposição de aulas
@@ -200,22 +194,28 @@ function criteriumOverlaping(results){
     Object.keys(classesByDate).forEach((date) => {
       let classesForDate = classesByDate[date];
       for (let i = 0; i < classesForDate.length - 1; i++) {
+        isTrue = false
         for (let j = i + 1; j < classesForDate.length; j++) {
           if((classesForDate[i][dictionary['Início']] < classesForDate[j][dictionary['Fim']] && classesForDate[i][dictionary['Fim']] > classesForDate[j][dictionary['Início']]) ||
             (classesForDate[j][dictionary['Início']] < classesForDate[i][dictionary['Fim']] && classesForDate[j][dictionary['Fim']] > classesForDate[i][dictionary['Início']])){
               countOverlaping++
+              isTrue = true  
           }
+        }
+        if(isTrue){
+          results.data[i]['OverLaping'] = true
+        } else{
+          results.data[i]['OverLaping'] = false
         }
       }
     });
   }
-  // console.log("Total of Overlapings: " + countOverlaping)
-  return countOverlaping
+  results.criteriums['OverLaping'] = countOverlaping
+  return results
 }
 
 // Função que avalia o critério de requesitos e que avalia o numero de aulas sem sala 
 function criteriumClassRequisites(results){
-  let arr = []
   let countRequisitesNotMet = 0
   let countNoClassroom = 0
   for(let i = 0; i < results.data.length; i++){
@@ -224,45 +224,53 @@ function criteriumClassRequisites(results){
     if(roomName in classRoomDictionary){
       if(!classRoomDictionary[roomName].includes(askedRequisites)){
         countRequisitesNotMet++
+        results.data[i]['RequisitesNotMet'] = true
+        results.data[i]['NoClassroom'] = false
+      } else{
+        results.data[i]['RequisitesNotMet'] = false
+        results.data[i]['NoClassroom'] = false
       }
     } else if(roomName === "") {
       countNoClassroom++
+      results.data[i]['RequisitesNotMet'] = true
+      results.data[i]['NoClassroom'] = true
+    } else {
+      results.data[i]['RequisitesNotMet'] = false
+      results.data[i]['NoClassroom'] = false
     }
   }
-  arr.push(countRequisitesNotMet)
-  arr.push(countNoClassroom)
-  return arr
-  //console.log("Total Requisites not met: " + countRequisitesNotMet)
-  //console.log("Total no classroom: " + countNoClassroom)
+  results.criteriums['RequisitesNotMet'] = countRequisitesNotMet
+  results.criteriums['NoClassroom'] = countNoClassroom
+  return results
 }
 
-function countOccurrences(data, fieldIndex) {
-  let dictionary = {};
+// function countOccurrences(data, fieldIndex) {
+//   let dictionary = {};
 
-  // Loop through the data and count occurrences of the specified field
-  data.forEach((item) => {
-      let fieldValue = item[fieldIndex];
+//   // Loop through the data and count occurrences of the specified field
+//   data.forEach((item) => {
+//       let fieldValue = item[fieldIndex];
       
-      if (!dictionary[fieldValue]) {
-          dictionary[fieldValue] = 1;
-      } else {
-          dictionary[fieldValue]++;
-      }
-  });
+//       if (!dictionary[fieldValue]) {
+//           dictionary[fieldValue] = 1;
+//       } else {
+//           dictionary[fieldValue]++;
+//       }
+//   });
 
-  return dictionary;
-}
+//   return dictionary;
+// }
 
-function criteriumNotUsedRequisites(resultsSchedule, resultsClassrooms){
-  let dictionaryClassrooms = countOccurrences(resultsClassrooms, 'className');
-  let dictionaryAskedRequisites = countOccurrences(resultsSchedule, 'Características da sala pedida para a aula');
-  let dictionaryRealRequisites = countOccurrences(resultsSchedule,'Características reais da sala');
+// function criteriumNotUsedRequisites(resultsSchedule, resultsClassrooms){ //TODO Pensar se vai ser feito
+//   let dictionaryClassrooms = countOccurrences(resultsClassrooms, 'className');
+//   let dictionaryAskedRequisites = countOccurrences(resultsSchedule, 'Características da sala pedida para a aula');
+//   let dictionaryRealRequisites = countOccurrences(resultsSchedule,'Características reais da sala');
 
 
-  // necessárias = pedidos - reais -> as diferentes das pedidas
-  // sobram = classrooms - reais -> sobram em cada sala
-  // sobram - necessárias
-} 
+//   // necessárias = pedidos - reais -> as diferentes das pedidas
+//   // sobram = classrooms - reais -> sobram em cada sala
+//   // sobram - necessárias
+// } 
 
 function evaluateDynamicFormulaCriterium(schedulesData, expression) {
   const foundColumnNames = extractColumnNamesFromExpression(expression, Object.values(dictionary)); // Utiliza os valores do cabeçalho recebido
@@ -272,16 +280,21 @@ function evaluateDynamicFormulaCriterium(schedulesData, expression) {
     const schedule = schedulesData[scheduleId];
     const scheduleData = schedule.data; // Assuming data is stored under 'data' property
     let counter = 0
-    scheduleData.forEach((row) => {
+    scheduleData.forEach((row, index) => {
       const rowSpecificExpression = substituteColumnNamesWithValues(expression, row, foundColumnNames);
       try {
         const result = math.evaluate(rowSpecificExpression);
         if(result){
           counter++
+          schedule.data[index][expression] = true;
+        }
+        else{
+          schedule.data[index][expression] = false;
         }
       } catch (error) {
         console.error(`Error evaluating expression for row: ${error}`);
         errorOccured = true
+        schedule.data[index][expression] = false;
       }
     });
     if(errorOccured){
@@ -323,27 +336,23 @@ function substituteColumnNamesWithValues(expression, row, columnNames) {
 }
 
 function evaluateDynamicTextCriterium(schedulesData, column, inputText) {
-  // Generate the field name dynamically based on column and inputText
   const inputParsed = inputText.split('.').join(' ') //Problema com o Tabulator 
   const fieldName = `${column}=${inputParsed}`;
-
-  // Iterate through each schedule
   Object.keys(schedulesData).forEach((scheduleId) => {
     let counter = 0;
     const schedule = schedulesData[scheduleId];
 
-    // Iterate through each row of data in the schedule
-    schedule.data.forEach((row) => {
+    schedule.data.forEach((row, index) => {
       if (math.compareText(row[column], inputText) === 0) {
+        schedule.data[index][fieldName] = true
         counter++;
+      } else {
+        schedule.data[index][fieldName] = false
       }
     });
     console.log(`Dynamic criterium (${fieldName}): ${counter}`);
-    // Update the criteriums field for the schedule using the dynamic field name
     schedule.criteriums[fieldName] = counter;
   });
-
-  //console.log(`Dynamic criterium (${fieldName}): ${counter}`);
   return schedulesData;
 }
 
@@ -398,8 +407,42 @@ function roundToNearestHour(time) {
   return date.toTimeString().slice(0, 8);
 }
 
+function createModifiableTabulator(scheduleData){
+ 
+const dictionaryValues = Object.values(dictionary); // Assuming 'dictionary' is your dictionary object
+
+const columns = Object.keys(scheduleData[0]).map(key => {
+  let column = {
+    title: key,
+    field: key,
+    editor: "input",
+    headerFilter: "input",
+  };
+
+  // Check if 'key' is not present in the values of the 'dictionary'
+  if (!dictionaryValues.includes(key)) {
+    column.formatter = "tickCross"; 
+    column.editor = ""
+    column.headerFilter = ""
+  }
+
+  return column;
+});
+  modifiableTable = new Tabulator("#modifiable-tabulator", {
+    data: scheduleData,
+    layout: "fitData",
+    autoColumns: false,
+    columns: [
+      ...columns,
+    ],
+    pagination: "local",
+    paginationSize: 7,
+  });
+}
+
 // Recebe todos os dados e cria a tabela do Tabulator
-function createTabulator(schedulesData, graphs, downloadContainer){
+function createTabulator(schedulesData, graphs, downloadContainer, modifiableTabulator){
+  console.log(schedulesData)
   const scheduleIds = Object.keys(schedulesData);
 
   const firstSchedule = schedulesData[scheduleIds[0]];
@@ -434,15 +477,19 @@ function createTabulator(schedulesData, graphs, downloadContainer){
       let selectedScheduleData  = schedulesData[data[0]['scheduleId']].data
       console.log(data)
       createHeatMap(selectedScheduleData)
-      createChordDiagram(selectedScheduleData)
+      //createChordDiagram(selectedScheduleData)
+      modifiableDataTabulator = createModifiableTabulator(selectedScheduleData)
       insertDownloadButton(downloadContainer, selectedScheduleData);
     }
     else{
       graphs.innerHTML = ""
       downloadContainer.innerHTML = ""
+      modifiableTabulator.innerHTML = ""
     }
   });
 }
+
+
 
 function insertDownloadButton(downloadContainer, selectedScheduleData, ) {
   const buttonJSON = document.createElement('button');
@@ -460,19 +507,36 @@ function insertDownloadButton(downloadContainer, selectedScheduleData, ) {
 }
 
 function downloadFile(selectedScheduleData, csv) {
-  let fileData, blob, filename;
+  console.log(modifiableTable.getData()) //TODO Usar estes dados para criar os ficheiros 
+  let fileData, blob, filename, filteredData;
   const link = document.createElement('a');
-  if(csv === true){
-    const headers = Object.keys(selectedScheduleData[0]);
-    const dataRows = selectedScheduleData.map(row => headers.map(header => row[header]).join(','));
+
+  if (csv === true) {
+    const dictionaryValues = Object.values(dictionary);
+    const headers = Object.keys(selectedScheduleData[0]).filter(key => dictionaryValues.includes(key));
+    const dataRows = selectedScheduleData.map(row => {
+      return headers.map(header => row[header]).join(',');
+    });
+
     fileData = [headers.join(','), ...dataRows].join('\n');
     blob = new Blob([fileData], { type: 'text/csv' });
     filename = 'data.csv';
-  } else{
-    fileData = JSON.stringify(selectedScheduleData, null, 2);
+  } else {
+    filteredData = selectedScheduleData.map(row => {
+      const filteredRow = {};
+      Object.keys(row).forEach(key => {
+        if (dictionary[key]) {
+          filteredRow[dictionary[key]] = row[key];
+        }
+      });
+      return filteredRow;
+    });
+
+    fileData = JSON.stringify(filteredData, null, 2);
     blob = new Blob([fileData], { type: 'application/json' });
     filename = 'data.json';
   }
+
   link.href = URL.createObjectURL(blob);
   link.download = filename;
   document.body.appendChild(link);
@@ -517,18 +581,12 @@ function createLineChart(){
 
 function countRoomUsageByStartTime(scheduleData) {
   const roomUsageByStartTime = {};
-  // Iterar sobre cada linha de dados no horário
   scheduleData.forEach(row => {
     const startTime = row[dictionary['Início']]
     const roomName = row[dictionary['Sala da aula']]; 
-
-    // Verificar se a sala e a hora de início estão presentes nos dados
     if (startTime && roomName) {
       const roundedStartTime = roundToNearestHour(startTime);
-      // Criar um identificador único para a combinação sala + hora de início
       const key = `${roomName}/${roundedStartTime}`;
-
-      // Incrementar o contador para essa combinação
       roomUsageByStartTime[key] = (roomUsageByStartTime[key] || 0) + 1;
     }
   });
@@ -748,7 +806,7 @@ function prepareChordData(schedulesData) {
 }
 
 // Chamar a função para criar o diagrama de chord
-createChordDiagram(selectedScheduleData);
+//createChordDiagram(selectedScheduleData);
 
 
 
