@@ -42,16 +42,6 @@ function handleParsedData(results, index, e, csvDataDiv, hiddenDiv, classroomsIn
     const table = document.createElement("div");
     table.setAttribute("id", "csvTable" + index);
     csvDataDiv.appendChild(table);
-    // if (!classroomsInput){
-    //   new Tabulator("#csvTable" + index, {
-    //     data: results.data,
-    //     layout: "fitData",
-    //     autoColumns: true,
-    //     pagination: "local",
-    //     paginationSize: 7,
-    //   });
-    // }
-
   } else {
     if(hiddenDiv.style.display === "block" && classroomsInput){
       hiddenDiv.style.display = "none"
@@ -81,15 +71,18 @@ function parseURLs(urls, e, csvDataDiv, hiddenDiv) {
       complete: function (results) {
         const scheduleId = `Horário ${i + 1}`
         const scheduleData = { data: results.data };
-        scheduleData['criteriums'] = evaluateCriteriums(results);
+        evaluateCriteriums(scheduleData)
         schedulesData[scheduleId] = scheduleData;
-
+        console.log(schedulesData)
         handleParsedData(results, i, e, csvDataDiv, hiddenDiv, false);
         updateDynamicCriteriums(dropdown)
 
         urlsProcessed++
         if(urlsProcessed === urls.length){
-          createTabulator(schedulesData)
+          dynamicCriteriums.style.display = "block"
+          schedulesData = orderSchedulesData(schedulesData)
+          createTabulator(schedulesData, graphs, downloadContainer, modifiableTabulator)
+          createLineChart()
         }
       }
     });
@@ -244,34 +237,6 @@ function criteriumClassRequisites(results){
   return results
 }
 
-// function countOccurrences(data, fieldIndex) {
-//   let dictionary = {};
-
-//   // Loop through the data and count occurrences of the specified field
-//   data.forEach((item) => {
-//       let fieldValue = item[fieldIndex];
-      
-//       if (!dictionary[fieldValue]) {
-//           dictionary[fieldValue] = 1;
-//       } else {
-//           dictionary[fieldValue]++;
-//       }
-//   });
-
-//   return dictionary;
-// }
-
-// function criteriumNotUsedRequisites(resultsSchedule, resultsClassrooms){ //TODO Pensar se vai ser feito
-//   let dictionaryClassrooms = countOccurrences(resultsClassrooms, 'className');
-//   let dictionaryAskedRequisites = countOccurrences(resultsSchedule, 'Características da sala pedida para a aula');
-//   let dictionaryRealRequisites = countOccurrences(resultsSchedule,'Características reais da sala');
-
-
-//   // necessárias = pedidos - reais -> as diferentes das pedidas
-//   // sobram = classrooms - reais -> sobram em cada sala
-//   // sobram - necessárias
-// } 
-
 function evaluateDynamicFormulaCriterium(schedulesData, expression) {
   const foundColumnNames = extractColumnNamesFromExpression(expression, Object.values(dictionary)); // Utiliza os valores do cabeçalho recebido
   let errorCounter = 0
@@ -335,6 +300,13 @@ function substituteColumnNamesWithValues(expression, row, columnNames) {
   return modifiedExpression;
 }
 
+function checkForExactWordMatch(expression, input) {
+  const regexString = `\\b${input}\\b(?![\\w-])`;
+  const regex = new RegExp(regexString);
+  return regex.test(expression);
+}
+
+
 function evaluateDynamicTextCriterium(schedulesData, column, inputText) {
   const inputParsed = inputText.split('.').join(' ') //Problema com o Tabulator 
   const fieldName = `${column}=${inputParsed}`;
@@ -343,7 +315,8 @@ function evaluateDynamicTextCriterium(schedulesData, column, inputText) {
     const schedule = schedulesData[scheduleId];
 
     schedule.data.forEach((row, index) => {
-      if (math.compareText(row[column], inputText) === 0) {
+      //if (math.compareText(row[column], inputText) === 0) {
+        if (checkForExactWordMatch(row[column], inputText)) {
         schedule.data[index][fieldName] = true
         counter++;
       } else {
@@ -515,11 +488,11 @@ function downloadFile(selectedScheduleData, csv) {
     const dictionaryValues = Object.values(dictionary);
     const headers = Object.keys(selectedScheduleData[0]).filter(key => dictionaryValues.includes(key));
     const dataRows = selectedScheduleData.map(row => {
-      return headers.map(header => row[header]).join(',');
+      return headers.map(header => row[header]).join(csvSeparator);
     });
 
-    fileData = [headers.join(','), ...dataRows].join('\n');
-    blob = new Blob([fileData], { type: 'text/csv' });
+    fileData = [headers.join(csvSeparator), ...dataRows].join('\n');
+    blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), fileData], { type: 'text/csv;charset=utf-8' });
     filename = 'data.csv';
   } else {
     filteredData = selectedScheduleData.map(row => {
@@ -533,7 +506,8 @@ function downloadFile(selectedScheduleData, csv) {
     });
 
     fileData = JSON.stringify(filteredData, null, 2);
-    blob = new Blob([fileData], { type: 'application/json' });
+    blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), fileData], { type: 'application/json;charset=utf-8' });
+
     filename = 'data.json';
   }
 

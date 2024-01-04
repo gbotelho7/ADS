@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Carregamento de CSV com Papa Parse e Tabulator</title>
+  <title>Gestor de Horários</title>
 
   <link rel="stylesheet" type="text/css" href="../Style/styles.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/5.0.5/css/tabulator.min.css" rel="stylesheet">
@@ -14,6 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chord-js@1.0.7/dist/chord-diagram.min.js"></script>
   <script src="https://d3js.org/d3.v5.min.js"></script>
   <script src="../Scripts/functions.js"></script>
+  <meta charset="UTF-8">
   
 
 </head>
@@ -25,7 +26,7 @@
     const parsedData = storedData ? JSON.parse(storedData) : {}; //Transformar a info em JSON 
     window.defaultHeadersArray = "Curso;Unidade de execução;Turno;Turma;Inscritos no turno;Dia da Semana;Início;Fim;Dia;Características da sala pedida para a aula;Sala da aula;Lotação;Características reais da sala".split(";");
 
-    window.dictionary = parsedData.dictionary || {}; //TODO Adicionar os seus valores aos inputs
+    window.dictionary =  parsedData.dictionary || {"Curso":"Curso","Unidade de execução":"Unidade de execução","Turno":"Turno","Turma":"Turma","Inscritos no turno":"Inscritos no turno","Dia da Semana":"Dia da Semana","Início":"Início","Fim":"Fim","Dia":"Dia","Características da sala pedida para a aula":"Características da sala pedida para a aula","Sala da aula":"Sala da aula","Lotação":"Lotação","Características reais da sala":"Características reais da sala"};
     window.csvSeparator = parsedData.csvSeparator || ';';
     window.hourFormat = parsedData.hourFormat || "HH:mm:ss";
     window.dateFormat = parsedData.dateFormat || "DD/MM/YYYY";
@@ -35,6 +36,7 @@
     window.schedulesData = [] // Guarda toda a estrutura e dados dos horarios
     window.table;
     window.modifiableTable;
+
   </script>
     <h3>Ficheiro de Salas</h3>
     <input type="file" id="csvClassroomFileInput">
@@ -273,7 +275,7 @@
             handleParsedData(results, i, e, csvDataDiv, hiddenDiv, false);
             updateDynamicCriteriums(dropdown)
             filesProcessed++
-            if(filesProcessed === files.length){
+            if(filesProcessed === files.length){ //Para só criar Tabulator após todos os ficheiros serem processados
               dynamicCriteriums.style.display = "block"
               schedulesData = orderSchedulesData(schedulesData)
               createTabulator(schedulesData, graphs, downloadContainer, modifiableTabulator)
