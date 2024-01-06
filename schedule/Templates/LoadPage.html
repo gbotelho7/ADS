@@ -149,15 +149,26 @@
         <button type="button" id="criteriumTextSubmit">Submeter</button>
       </div>
     </div>
+    <br>
     <h4 id="h4-table">Lista de Horários</h4>
     <div id="chart-container"></div>
+    <br>
     <h4 id="h4-line-chart" >Gráfico de Linhas dos Critérios</h4>
     <div id="line-chart-container"></div>
+    <br>
     <h4 id="h4-heatmap">Heatmap de Ocupação de Salas</h4>
     <div id="heatmap-container"></div>
-    <div id="chord-diagram"></div>
+    <br>
+    <h4 id="h4-extra">Gráficos extra </h4>
+    <div id="extra-charts-container">
+      <div id="extra-graph1"></div>
+      <div id="extra-graph2"></div>
+      <div id="extra-graph3"></div>
+    </div>
+    <br>
     <h4 id="h4-modifiable">Tabela Alterável com Critérios</h4>
     <div id="modifiable-tabulator"></div>
+    <br>
     <h4 id="h4-download">Pode fazer o Download do conteúdo da tabela acima nos seguintes formatos</h4>
     <div id="download-container"></div>
   
@@ -185,6 +196,9 @@
     const modifiableTabulator = document.getElementById('modifiable-tabulator');
     const heatmapContainer = document.getElementById('heatmap-container');
 
+    const container = document.getElementById('extra-charts-container');
+    const graphs = container.querySelectorAll('div');
+
     
     const formulaSubmit = document.getElementById("criteriumFormulaSubmit") 
     const textSubmit = document.getElementById("criteriumTextSubmit")
@@ -199,7 +213,8 @@
       document.getElementById("h4-line-chart"),
       document.getElementById("h4-heatmap"),
       document.getElementById("h4-modifiable"),
-      document.getElementById("h4-download")
+      document.getElementById("h4-download"),
+      document.getElementById("h4-extra")
     ];
     
   
@@ -221,7 +236,7 @@
       //console.log(criteriumFormulaInputValue.value)
       schedulesData = evaluateDynamicFormulaCriterium(schedulesData, criteriumFormulaInputValue.value)
       console.log(schedulesData)
-      createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, h4Elements)
+      createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, h4Elements, graphs)
       createLineChart(h4Elements)
       //TODO Fazer Update aos Graficos
     })
@@ -230,7 +245,7 @@
     textSubmit.addEventListener("click", () => {
       schedulesData = evaluateDynamicTextCriterium(schedulesData, dropdown.value, criteriumTextInputValue.value)
       console.log(schedulesData)
-      createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, h4Elements)
+      createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, h4Elements, graphs)
       createLineChart(h4Elements)
       //TODO Fazer Update aos Graficos
     })
@@ -293,7 +308,7 @@
             if(filesProcessed === files.length){ //Para só criar Tabulator após todos os ficheiros serem processados
               dynamicCriteriums.style.display = "block"
               schedulesData = orderSchedulesData(schedulesData)
-              createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, h4Elements)
+              createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, h4Elements, graphs)
               createLineChart(h4Elements)
             }
           }
@@ -323,8 +338,12 @@
             lineChartContainer.innerHTML = ""
             downloadContainer.innerHTML = ""
             modifiableTabulator.innerHTML = ""
+            h4Elements.forEach(element => {
+              element.style.display = 'none';
+            });
             if (modifiableTabulator.classList.contains('tabulator')) {
               modifiableTabulator.classList.remove('tabulator');
+              
             }
 
           }
@@ -343,7 +362,7 @@
         }
       });
       if (urls.length > 0) {
-        parseURLs(urls, e, hiddenDiv, h4Elements);
+        parseURLs(urls, e, hiddenDiv, h4Elements, graphs);
       }
     });
 

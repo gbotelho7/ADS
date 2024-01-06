@@ -55,7 +55,7 @@ function handleParsedData(results, index, e, hiddenDiv, classroomsInput) {
 };
 
 // Faz a recepção dos dados no caso dos URLs
-function parseURLs(urls, e, hiddenDiv, h4Elements) {
+function parseURLs(urls, e, hiddenDiv, h4Elements, graphs) {
   schedulesData = []
   urlsProcessed = 0 
   for (let i = 0; i < urls.length; i++) {
@@ -75,8 +75,9 @@ function parseURLs(urls, e, hiddenDiv, h4Elements) {
         if(urlsProcessed === urls.length){
           dynamicCriteriums.style.display = "block"
           schedulesData = orderSchedulesData(schedulesData)
-          createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, h4Elements)
-          createLineChart()
+          createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, h4Elements, graphs)
+          console.log("fiz tabulator")
+          createLineChart(h4Elements)
         }
       }
     });
@@ -418,7 +419,7 @@ const columns = Object.keys(scheduleData[0]).map(key => {
 }
 
 // Recebe todos os dados e cria a tabela do Tabulator
-function createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, elementList){
+function createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, elementList, graphs){
   console.log(schedulesData)
   const scheduleIds = Object.keys(schedulesData);
 
@@ -442,9 +443,6 @@ function createTabulator(schedulesData, heatmapContainer, downloadContainer, mod
     return rowData;
   });
   
-  console.log(elementList[0])
-  elementList[0].style.display = "block";
-
   table = new Tabulator("#chart-container", {
     data: tableData,
     columns: columns,
@@ -455,8 +453,12 @@ function createTabulator(schedulesData, heatmapContainer, downloadContainer, mod
   table.on("rowSelectionChanged", function(data, rows, selected, deselected){ //TODO Terminar
     if(data.length !== 0){
       let selectedScheduleData  = schedulesData[data[0]['scheduleId']].data
-      console.log(data)
+      console.log(selectedScheduleData)
       createHeatMap(selectedScheduleData, elementList)
+      elementList[5].style.display = "block"
+      createTop10Chart(selectedScheduleData)
+      createPieChart(selectedScheduleData)
+      createRequisitesChart(selectedScheduleData)
       //createChordDiagram(selectedScheduleData)
       modifiableDataTabulator = createModifiableTabulator(selectedScheduleData, elementList)
       insertDownloadButton(downloadContainer, selectedScheduleData, elementList);
@@ -465,10 +467,15 @@ function createTabulator(schedulesData, heatmapContainer, downloadContainer, mod
       heatmapContainer.innerHTML = ""
       downloadContainer.innerHTML = ""
       modifiableTabulator.innerHTML = ""
+      graphs.forEach(graph => {
+        graph.innerHTML = '';
+      });
       if (modifiableTabulator.classList.contains('tabulator')) {
         modifiableTabulator.classList.remove('tabulator');
+        h4Elements.forEach(element => {
+          element.style.display = 'none';
+        });
       }
-
     }
   });
 }
@@ -550,7 +557,8 @@ function downloadFile(selectedScheduleData, csv) {
 }
 
 function createLineChart(elementList){
-  elementList[1].style.display = "block"
+  elementList[0].style.display = "block";
+  elementList[1].style.display = "block";
   const scheduleIds = Object.keys(schedulesData);
   const criteria = Object.keys(schedulesData[scheduleIds[0]].criteriums);
   const lineChartData = {
@@ -702,6 +710,214 @@ function createHeatMap(selectedScheduleData, elementList){
 
 }
 
+function createTop10Chart(data) {
+  const overcrowdingMap = new Map();
+  console.log(data)
+  // Loop through the data and count OverCrowding occurrences for each Sala
+  data.forEach(entry => {
+    const sala = entry[dictionary['Sala da aula']];
+    const overcrowding = entry['OverCrowding'];
+    //console.log(sala, overcrowding)
+    if (overcrowding && sala) {
+      if (!overcrowdingMap.has(sala)) {
+        overcrowdingMap.set(sala, 1);
+      } else {
+        const currentCount = overcrowdingMap.get(sala);
+        overcrowdingMap.set(sala, currentCount + 1);
+      }
+    }
+  });
+  console.log(overcrowdingMap)
+  // Sort the map by value in descending order
+  const sortedMap = new Map([...overcrowdingMap.entries()].sort((a, b) => b[1] - a[1]));
+
+  // Extract top 10 Salas with most Overcrowding
+  const top10 = Array.from(sortedMap.entries()).slice(0, 10);
+
+  // Prepare data for FusionCharts
+  const chartData = top10.map(([sala, count]) => ({
+    label: sala,
+    value: count,
+  }));
+
+  // FusionCharts configuration object
+  const chartConfig = {
+    type: 'bar2d',
+    renderAt: 'extra-graph1', // Provide the div id where you want to render the chart
+    width: '100%',
+    height: '600',
+    dataFormat: 'json',
+    dataSource: {
+      chart: {
+        paletteColors: '#0066ff',
+        caption: 'Top 10 Salas com mais Sobrelotações',
+        xAxisName: 'Salas',
+        yAxisName: 'Número de Sobrelotações',
+        rotateLabels: '1',
+        theme: 'fusion',
+      },
+      data: chartData,
+    },
+  };
+
+  // Render FusionCharts
+  FusionCharts.ready(function () {
+    const fusionChart = new FusionCharts(chartConfig);
+    fusionChart.render();
+  });
+}
+
+function createPieChart(data) {
+  let dataLength = data.length
+  const criteriaMap = new Map([
+    ['Atribuição Incorreta', 0],
+    ['Sala por atribuir', 0],
+    ['Atribuição Correta', 0]
+  ]);
+
+  data.forEach(entry => {
+    const requisitesNotMet = entry['RequisitesNotMet'];
+    const noClassroom = entry['NoClassroom'];
+
+    if (requisitesNotMet === true && noClassroom === false) {
+      criteriaMap.set('Atribuição Incorreta', criteriaMap.get('Atribuição Incorreta') + 1);
+    } else if (noClassroom === true) {
+      criteriaMap.set('Sala por atribuir', criteriaMap.get('Sala por atribuir') + 1);
+    } else if (requisitesNotMet === false && noClassroom === false) {
+      criteriaMap.set('Atribuição Correta', criteriaMap.get('Atribuição Correta') + 1);
+    }
+  });
+
+  // Prepare data for FusionCharts
+  const chartData = [];
+  criteriaMap.forEach((value, key) => {
+    chartData.push({ label: key, value });
+  });
+
+  // FusionCharts configuration object
+  const chartConfig = {
+    type: 'pie2d',
+    renderAt: 'extra-graph2', // Replace with your container ID
+    width: '100%',
+    height: '600',
+    dataFormat: 'json',
+    dataSource: {
+      chart: {
+        paletteColors: '#7fc7d9, #0f1035, #0066ff',
+        caption: 'Análise de Atribuição de Salas',
+        plottooltext: "<b>$percentValue</b> das salas têm uma $label",
+        subCaption: 'Total de Ocorrências: ' + dataLength,
+        showPercentValues: '0',
+        alignCaptionWithCanvas: '0',
+        captionPadding: '0',
+        decimals: '1',
+        theme: 'fusion',
+        legendposition: "bottom",
+        showlegend: "0",
+      },
+      data: chartData // This is the data prepared earlier
+    }
+  };
+
+  // Render FusionCharts
+  FusionCharts.ready(function () {
+    const fusionChart = new FusionCharts(chartConfig);
+    fusionChart.render();
+  });
+}
+
+function createRequisitesChart(data){
+  // let requisitesNotMetMap = new Map();
+  // data.forEach(entry => {
+  //   const sala = entry[dictionary['Sala da aula']];
+  //   const requisitesNotMet = entry['RequisitesNotMet'];
+  //   //console.log(sala, overcrowding)
+  //   if (requisitesNotMet && sala) {
+  //     if (!requisitesNotMetMap.has(sala)) {
+  //       requisitesNotMetMap.set(sala, 1);
+  //     } else {
+  //       const currentCount = requisitesNotMetMap.get(sala);
+  //       requisitesNotMetMap.set(sala, currentCount + 1);
+  //     }
+  //   }
+  // });
+  // requisitesNotMetMap = new Map([...requisitesNotMetMap.entries()].sort());
+  // console.log(requisitesNotMetMap)
+ 
+  function findSubstringWithNumberAndLetter(inputString) {
+    for (let i = 0; i < inputString.length; i++) {
+      if (!isNaN(parseInt(inputString[i]))) {
+        for (let j = i + 1; j < inputString.length; j++) {
+          if (/[a-zA-Z]/.test(inputString[j])) {
+            return inputString.substring(i, j + 1);
+          }
+        }
+      }
+      else if (/[a-zA-Z]/.test(inputString[i])) {
+        for (let j = i + 1; j < inputString.length; j++) {
+          if (!isNaN(parseInt(inputString[j]))) {
+            return inputString.substring(i, j + 1);
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  const newMap = new Map();
+
+  // Iterate through each key-value pair in the map
+  data.forEach(entry => {
+    const sala = entry[dictionary['Sala da aula']];
+    const requisitesNotMet = entry['RequisitesNotMet'];
+    const substring = findSubstringWithNumberAndLetter(sala);
+    if (substring && requisitesNotMet) {
+      if (!newMap.has(substring)) {
+        newMap.set(substring, 1);
+      } else {
+        const currentCount = newMap.get(substring) + 1;
+        newMap.set(substring, currentCount);
+      }
+    }
+  })
+
+  console.log("New Map:", newMap);
+
+
+  const labels = Array.from(newMap.keys());
+  const counts = Array.from(newMap.values());
+
+  // FusionCharts configuration
+  const chartConfig = {
+    type: 'doughnut2d',
+    width: '100%',
+    height: '600',
+    dataFormat: 'json',
+    renderAt: 'extra-graph3',
+    dataSource: {
+      chart: {
+        plottooltext: "<b>$percentValue</b> das falhas de atribuição ocorrem na zona <b>$label</b>",
+        caption: 'Secções onde existem mais falhas de atribuição de salas',
+        subCaption: 'Substring Counts',
+        showPercentValues: '1',
+        showLegend: '0',
+        theme: 'fusion'
+      },
+      data: labels.map((label, index) => ({
+        label: label,
+        value: counts[index]
+      }))
+    }
+  };
+
+  // Render the FusionCharts instance
+  FusionCharts.ready(function () {
+    new FusionCharts(chartConfig).render();
+  });
+}
+
+//CHORD DIAGRAM
+
 function createChordDiagram(schedulesData) {
   // Preparar dados para o diagrama de chord
   const chordData = prepareChordData(schedulesData);
@@ -746,6 +962,8 @@ function createChordDiagram(schedulesData) {
     console.error("Error creating chord diagram:", error);
   }
 }
+
+
 
   
 
