@@ -55,7 +55,7 @@ function handleParsedData(results, index, e, hiddenDiv, classroomsInput) {
 };
 
 // Faz a recepção dos dados no caso dos URLs
-function parseURLs(urls, e, hiddenDiv) {
+function parseURLs(urls, e, hiddenDiv, h4Elements) {
   schedulesData = []
   urlsProcessed = 0 
   for (let i = 0; i < urls.length; i++) {
@@ -75,7 +75,7 @@ function parseURLs(urls, e, hiddenDiv) {
         if(urlsProcessed === urls.length){
           dynamicCriteriums.style.display = "block"
           schedulesData = orderSchedulesData(schedulesData)
-          createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator)
+          createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, h4Elements)
           createLineChart()
         }
       }
@@ -95,12 +95,17 @@ function saveSettings(){
 }
 
 // Ajuda os Switches tanto de inputs como de critérios
-function handleSwitch(input1, input2, toggleSwitch) {
+function handleSwitch(input1, input2, toggleSwitch, fileInput) {
   if(toggleSwitch.checked){
     input1.style.display = "none"
     input2.style.display = "block"
   } else{
-    input1.style.display = "block"
+    if(fileInput){
+      input1.style.display = ""
+    } else {
+      input1.style.display = "block"
+    }
+    
     input2.style.display = "none"
   }
 }
@@ -378,8 +383,8 @@ function roundToNearestHour(time) {
   return date.toTimeString().slice(0, 8);
 }
 
-function createModifiableTabulator(scheduleData){
- 
+function createModifiableTabulator(scheduleData, elementList){
+elementList[3].style.display = "block"
 const dictionaryValues = Object.values(dictionary); // Assuming 'dictionary' is your dictionary object
 
 const columns = Object.keys(scheduleData[0]).map(key => {
@@ -413,7 +418,7 @@ const columns = Object.keys(scheduleData[0]).map(key => {
 }
 
 // Recebe todos os dados e cria a tabela do Tabulator
-function createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator){
+function createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, elementList){
   console.log(schedulesData)
   const scheduleIds = Object.keys(schedulesData);
 
@@ -436,6 +441,9 @@ function createTabulator(schedulesData, heatmapContainer, downloadContainer, mod
     });
     return rowData;
   });
+  
+  console.log(elementList[0])
+  elementList[0].style.display = "block";
 
   table = new Tabulator("#chart-container", {
     data: tableData,
@@ -448,10 +456,10 @@ function createTabulator(schedulesData, heatmapContainer, downloadContainer, mod
     if(data.length !== 0){
       let selectedScheduleData  = schedulesData[data[0]['scheduleId']].data
       console.log(data)
-      createHeatMap(selectedScheduleData)
+      createHeatMap(selectedScheduleData, elementList)
       //createChordDiagram(selectedScheduleData)
-      modifiableDataTabulator = createModifiableTabulator(selectedScheduleData)
-      insertDownloadButton(downloadContainer, selectedScheduleData);
+      modifiableDataTabulator = createModifiableTabulator(selectedScheduleData, elementList)
+      insertDownloadButton(downloadContainer, selectedScheduleData, elementList);
     }
     else{
       heatmapContainer.innerHTML = ""
@@ -484,7 +492,8 @@ function populateOptions(elementID, list) {
 } 
 
 
-function insertDownloadButton(downloadContainer, selectedScheduleData, ) {
+function insertDownloadButton(downloadContainer, selectedScheduleData, elementList) {
+  elementList[4].style.display = "block"
   const buttonJSON = document.createElement('button');
   buttonJSON.textContent = 'Download JSON';
   buttonJSON.onclick = function(){
@@ -540,7 +549,8 @@ function downloadFile(selectedScheduleData, csv) {
   document.body.removeChild(link);
 }
 
-function createLineChart(){
+function createLineChart(elementList){
+  elementList[1].style.display = "block"
   const scheduleIds = Object.keys(schedulesData);
   const criteria = Object.keys(schedulesData[scheduleIds[0]].criteriums);
   const lineChartData = {
@@ -588,7 +598,8 @@ function countRoomUsageByStartTime(scheduleData) {
   return roomUsageByStartTime;
 }
 
-function createHeatMap(selectedScheduleData){
+function createHeatMap(selectedScheduleData, elementList){
+  elementList[2].style.display = "block"
   const roomUsageByStartTime = countRoomUsageByStartTime(selectedScheduleData)
   console.log(roomUsageByStartTime)
     // Converta os dados para o formato esperado pela FusionCharts
@@ -689,52 +700,54 @@ function createHeatMap(selectedScheduleData){
     }
   });
 
+}
 
+function createChordDiagram(schedulesData) {
+  // Preparar dados para o diagrama de chord
+  const chordData = prepareChordData(schedulesData);
 
-  function createChordDiagram(schedulesData) {
-    // Preparar dados para o diagrama de chord
-    const chordData = prepareChordData(schedulesData);
-  
-    // Configurações do gráfico de chord
-    const chordConfig = {
-      width: 800,
-      height: 800,
-      margin: { top: 20, right: 20, bottom: 20, left: 20 },
-      padAngle: 0.02,
-      sortGroups: d3.descending,
-      sortSubgroups: d3.descending,
-    };
-  
-    // Selecione o elemento SVG para o diagrama de chord
-    const svg = d3.select('#chord-diagram')
-      .append('svg')
-      .attr('width', chordConfig.width)
-      .attr('height', chordConfig.height)
-      .append('g')
-      .attr('transform', `translate(${chordConfig.width / 2},${chordConfig.height / 2})`);
-  
-    try {
-      // Crie o layout de chord usando d3-chord
-      const chordLayout = d3.chord()
-        .padAngle(chordConfig.padAngle)
-        .sortGroups(chordConfig.sortGroups)
-        .sortSubgroups(chordConfig.sortSubgroups);
-  
-      const chords = chordLayout(chordData.matrix);
-  
-      // Configure e desenhe os arcos
-      svg.selectAll('path')
-        .data(chords)
-        .enter()
-        .append('path')
-        .attr('d', d3.ribbon().radius(200))
-        .style('fill', 'steelblue')
-        .style('stroke', 'black');
-  
-    } catch (error) {
-      console.error("Error creating chord diagram:", error);
-    }
+  // Configurações do gráfico de chord
+  const chordConfig = {
+    width: 800,
+    height: 800,
+    margin: { top: 20, right: 20, bottom: 20, left: 20 },
+    padAngle: 0.02,
+    sortGroups: d3.descending,
+    sortSubgroups: d3.descending,
+  };
+
+  // Selecione o elemento SVG para o diagrama de chord
+  const svg = d3.select('#chord-diagram')
+    .append('svg')
+    .attr('width', chordConfig.width)
+    .attr('height', chordConfig.height)
+    .append('g')
+    .attr('transform', `translate(${chordConfig.width / 2},${chordConfig.height / 2})`);
+
+  try {
+    // Crie o layout de chord usando d3-chord
+    const chordLayout = d3.chord()
+      .padAngle(chordConfig.padAngle)
+      .sortGroups(chordConfig.sortGroups)
+      .sortSubgroups(chordConfig.sortSubgroups);
+
+    const chords = chordLayout(chordData.matrix);
+
+    // Configure e desenhe os arcos
+    svg.selectAll('path')
+      .data(chords)
+      .enter()
+      .append('path')
+      .attr('d', d3.ribbon().radius(200))
+      .style('fill', 'steelblue')
+      .style('stroke', 'black');
+
+  } catch (error) {
+    console.error("Error creating chord diagram:", error);
   }
+}
+
+  
 
 function prepareChordData(schedulesData) {
   console.log("Preparing data for chord diagram...");
@@ -875,4 +888,3 @@ function prepareChordData(schedulesData) {
 
 // Chamar a função para criar o diagrama de chord
 //createChordDiagram(schedulesData);
-}

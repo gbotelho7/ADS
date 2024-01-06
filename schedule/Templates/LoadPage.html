@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt">
 <head>
   <title>Gestor de Horários</title>
 
   <link rel="stylesheet" type="text/css" href="../Style/styles.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/tabulator/5.0.5/css/tabulator.min.css" rel="stylesheet">
-  <link href="../Style/new_styles.css" rel="stylesheet">
+  <!--<link href="../Style/new_styles.css" rel="stylesheet">-->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tabulator/5.0.5/js/tabulator.min.js"></script>
   <script src="https://unpkg.com/mathjs@12.0.0/lib/browser/math.js"></script>
@@ -55,8 +55,8 @@
       URL Input
       
       <br><br>
-      <input type="file" id="csvScheduleFileInput" style="display: block; align-items: center;"; multiple>
-      
+      <input type="file" id="csvScheduleFileInput"; multiple>
+      <br><br>
       <div id="csvScheduleUrlInput" style="display: none;">
         <div id="urlInputs">
           <input type="text" class="urlInput" placeholder="Enter URL">
@@ -68,7 +68,7 @@
       <button id="show-form-button">Alterar Configurações do Ficheiro</button>
       
       <form id="hidden-form" style="display: none;">
-        <h4>Estas são as definições atuais, pretende alterar alguma?</h4>
+        <h3>Estas são as definições atuais, pretende alterar alguma?</h3>
 
         <label for="delimiter">Delimitador:</label>
         <input type="text" id="delimiter" name="delimiter" ><br>
@@ -82,7 +82,7 @@
         <div id="headers">
           <br>
           <strong style="color: #365486;">Faça a correspondência entre os seus cabeçalhos e os nossos:</strong>
-          <br>
+          <br><br>
           Curso: <input type="text" id="header-curso">
           <br>
           Unidade de execução: <input type="text" id="header-unidade">
@@ -116,20 +116,18 @@
 
         <label for="headerd">Cabeçalhos Datas:</label>
         <input type="text" id="headerd" name="headerd"><br>
-        
-        
-
+        <br><br>
         <input type="submit" value="Submeter">
       </form>
     </div>
-    <div id="dynamicCriteriums" style="display: none;"> <!--style="display: none;"-->
+    <div id="dynamicCriteriums" style="display: none;">
       <br>
-      Formula Dynamic Criterium
+      Critério Dinâmico em formula
       <label class="switch">
         <input type="checkbox" id="toggleSwitch2">
         <span class="slider"></span>
       </label>
-      Text Dynamic Criterium
+      Critério Dinâmico de texto
       <br><br>
       <div id="criteriumFormulaInputs">
         Critérios Dinamicos com Formula:
@@ -137,7 +135,7 @@
         <input type="submit"  id="criteriumFormulaSubmit">-->
         <input list="formulaOptions" id="criteriumFormulaInputValue" placeholder="Enter Criterium">
         <datalist id="formulaOptions"></datalist>
-        <button type="button" id="criteriumFormulaSubmit">Submit</button>
+        <button type="button" id="criteriumFormulaSubmit">Submeter</button>
       </div>
       <div id="criteriumTextInputs" style="display: none;">
         Critérios Dinamicos com Texto:
@@ -148,19 +146,19 @@
         <input type="submit"  id="criteriumTextSubmit">-->
         <input list="textOptions" id="criteriumTextInputValue" placeholder="Enter Text">
         <datalist id="textOptions"></datalist>
-        <button type="button" id="criteriumTextSubmit">Submit</button>
+        <button type="button" id="criteriumTextSubmit">Submeter</button>
       </div>
     </div>
-    <h4>Lista de Horários</h4>
+    <h4 id="h4-table">Lista de Horários</h4>
     <div id="chart-container"></div>
-    <h4>Gráfico de Linha dos Critérios</h4>
+    <h4 id="h4-line-chart" >Gráfico de Linhas dos Critérios</h4>
     <div id="line-chart-container"></div>
-    <h4>Heatmap de Ocupação de Salas</h4>
+    <h4 id="h4-heatmap">Heatmap de Ocupação de Salas</h4>
     <div id="heatmap-container"></div>
     <div id="chord-diagram"></div>
-    <h4>Tabela Alterável com Critérios</h4>
+    <h4 id="h4-modifiable">Tabela Alterável com Critérios</h4>
     <div id="modifiable-tabulator"></div>
-    <h4>Pode fazer o Download do conteudo da tabela acima nos seguintes formatos</h4>
+    <h4 id="h4-download">Pode fazer o Download do conteúdo da tabela acima nos seguintes formatos</h4>
     <div id="download-container"></div>
   
   <script>
@@ -195,18 +193,27 @@
 
     const hiddenDiv = document.getElementById("after-classrooms")
     const inputsHeaders = document.querySelectorAll('#headers input[type="text"]');
+    
+    const h4Elements = [
+      document.getElementById("h4-table"),
+      document.getElementById("h4-line-chart"),
+      document.getElementById("h4-heatmap"),
+      document.getElementById("h4-modifiable"),
+      document.getElementById("h4-download")
+    ];
+    
   
     // Coloca os diferentes variaveis como conteudo dos inputs do formulário
     settingsToValue([...['delimiter', 'hformat', 'dformat', 'headerh', 'headerd'], ...Array.from(inputsHeaders).map(input => input.id)])
 
-    // Botão entre iput de ficheiro ou input de url 
+    // Botão entre input de ficheiro ou input de url 
     toggleSwitch1.addEventListener('change', function() {
-      handleSwitch(csvFileInput, csvUrlInput, toggleSwitch1);
+      handleSwitch(csvFileInput, csvUrlInput, toggleSwitch1, true);
     });
 
     // Botão entre os diferentes critérios dinamicos
     toggleSwitch2.addEventListener('change', function() {
-      handleSwitch(criteriumFormulaInputs, criteriumTextInputs, toggleSwitch2);
+      handleSwitch(criteriumFormulaInputs, criteriumTextInputs, toggleSwitch2, false);
     });
 
     // Submeter Critério dinamico em formula
@@ -214,8 +221,8 @@
       //console.log(criteriumFormulaInputValue.value)
       schedulesData = evaluateDynamicFormulaCriterium(schedulesData, criteriumFormulaInputValue.value)
       console.log(schedulesData)
-      createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator)
-      createLineChart()
+      createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, h4Elements)
+      createLineChart(h4Elements)
       //TODO Fazer Update aos Graficos
     })
 
@@ -223,8 +230,8 @@
     textSubmit.addEventListener("click", () => {
       schedulesData = evaluateDynamicTextCriterium(schedulesData, dropdown.value, criteriumTextInputValue.value)
       console.log(schedulesData)
-      createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator)
-      createLineChart()
+      createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, h4Elements)
+      createLineChart(h4Elements)
       //TODO Fazer Update aos Graficos
     })
 
@@ -286,8 +293,8 @@
             if(filesProcessed === files.length){ //Para só criar Tabulator após todos os ficheiros serem processados
               dynamicCriteriums.style.display = "block"
               schedulesData = orderSchedulesData(schedulesData)
-              createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator)
-              createLineChart()
+              createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, h4Elements)
+              createLineChart(h4Elements)
             }
           }
         });
@@ -336,7 +343,7 @@
         }
       });
       if (urls.length > 0) {
-        parseURLs(urls, e, hiddenDiv);
+        parseURLs(urls, e, hiddenDiv, h4Elements);
       }
     });
 
@@ -356,6 +363,7 @@
       saveSettings()
       console.log(dynamicCriteriumsLists)
     });
+
 
   </script>
 </body>

@@ -54,3 +54,65 @@
   .slider.round:before {
     border-radius: 50%;
   }
+
+  body {
+    text-align: center;
+    font-family: Arial, sans-serif;
+    background-color: #dcf2f1;
+    color: #365486;
+  }
+  
+  h3 {
+    color: #365486; /* Blue color for headings */
+  }
+  
+  input[type="file"],
+  input[type="text"],
+  select {
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    outline: none;
+  }
+  
+  /* Styles for specific elements */
+  #after-classrooms,
+  #csvData,
+  #dynamicCriteriums {
+    color: #333;
+    padding: 10px;
+  }
+  
+  /* Make divs transparent */
+  #after-classrooms,
+  #csvData,
+  #dynamicCriteriums {
+    background-color: transparent;
+  }
+
+  #chart-container,
+  #line-chart-container, 
+  #modifiable-tabulator,
+  #download-container,
+  #heatmap-container {
+    width: 80%;
+    margin: 10px auto; /* Center the div horizontally */
+    text-align: center;
+  }
+
+  button, input[type="submit"]  {
+    padding: 8px 15px;
+    background-color: #0066ff;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-right: 10px;
+  }
+  
+  /* Style for h4 elements inside download-container */
+  h4 {
+    color: #365486;
+    margin-bottom: 10px;
+    text-align: center; 
+    display:none;
+  }
