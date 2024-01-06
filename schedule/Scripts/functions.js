@@ -1,5 +1,5 @@
 // Recebe os dados e confirma se estão de acordo com as configurações 
-function handleParsedData(results, index, e, csvDataDiv, hiddenDiv, classroomsInput) {
+function handleParsedData(results, index, e, hiddenDiv, classroomsInput) {
   let headersMatch = false;
   console.log(dictionary)
   if(classroomsInput){
@@ -39,9 +39,6 @@ function handleParsedData(results, index, e, csvDataDiv, hiddenDiv, classroomsIn
     if (hiddenDiv.style.display === "none"){
       hiddenDiv.style.display = "block"
     }
-    const table = document.createElement("div");
-    table.setAttribute("id", "csvTable" + index);
-    csvDataDiv.appendChild(table);
   } else {
     if(hiddenDiv.style.display === "block" && classroomsInput){
       hiddenDiv.style.display = "none"
@@ -58,8 +55,7 @@ function handleParsedData(results, index, e, csvDataDiv, hiddenDiv, classroomsIn
 };
 
 // Faz a recepção dos dados no caso dos URLs
-function parseURLs(urls, e, csvDataDiv, hiddenDiv) {
-  csvDataDiv.innerHTML = ""; // Clear previous data
+function parseURLs(urls, e, hiddenDiv) {
   schedulesData = []
   urlsProcessed = 0 
   for (let i = 0; i < urls.length; i++) {
@@ -74,9 +70,7 @@ function parseURLs(urls, e, csvDataDiv, hiddenDiv) {
         evaluateCriteriums(scheduleData)
         schedulesData[scheduleId] = scheduleData;
         console.log(schedulesData)
-        handleParsedData(results, i, e, csvDataDiv, hiddenDiv, false);
-        updateDynamicCriteriums(dropdown)
-
+        handleParsedData(results, i, e, hiddenDiv, false);
         urlsProcessed++
         if(urlsProcessed === urls.length){
           dynamicCriteriums.style.display = "block"
@@ -87,13 +81,17 @@ function parseURLs(urls, e, csvDataDiv, hiddenDiv) {
       }
     });
   }
+  updateDynamicCriteriums(dropdown)
+  populateOptions("formulaOptions", dynamicCriteriumsLists.formulaList);
+  populateOptions("textOptions", dynamicCriteriumsLists.textList);
   saveSettings()
 };
 
 // Guarda os diferentes dados
 function saveSettings(){
-  let settings = { "csvSeparator": csvSeparator, "hourFormat": hourFormat, "dateFormat": dateFormat, "dateColumns": dateColumns, "hourColumns": hourColumns, "dictionary": dictionary}; //dictionary
+  let settings = { "csvSeparator": csvSeparator, "hourFormat": hourFormat, "dateFormat": dateFormat, "dateColumns": dateColumns, "hourColumns": hourColumns, "dictionary": dictionary, "dynamicCriteriumsLists": dynamicCriteriumsLists}; //dictionary
   localStorage.setItem('executionData', JSON.stringify(settings)); 
+  console.log(settings)
 }
 
 // Ajuda os Switches tanto de inputs como de critérios
@@ -403,8 +401,9 @@ const columns = Object.keys(scheduleData[0]).map(key => {
 });
   modifiableTable = new Tabulator("#modifiable-tabulator", {
     data: scheduleData,
-    layout: "fitData",
+    //layout: "fitData",
     autoColumns: false,
+    width:"80%",
     columns: [
       ...columns,
     ],
@@ -462,6 +461,23 @@ function createTabulator(schedulesData, graphs, downloadContainer, modifiableTab
   });
 }
 
+function addToGlobalList(inputValue, list) {
+  if (!list.includes(inputValue) && inputValue !== "") {
+    //list.push(inputValue);
+    list.unshift(inputValue);
+  }
+}
+
+function populateOptions(elementID, list) {
+  const datalist = document.getElementById(elementID);
+  datalist.innerHTML = ""; // Clear existing options
+
+  list.forEach(item => {
+    const option = document.createElement("option");
+    option.value = item;
+    datalist.appendChild(option);
+  });
+} 
 
 
 function insertDownloadButton(downloadContainer, selectedScheduleData, ) {
@@ -546,8 +562,8 @@ function createLineChart(){
   new FusionCharts({
     type: "msline",
     renderAt: "line-chart-container",
-    width: "100%",
     height: "400",
+    width: "100%",
     dataFormat: "json",
     dataSource: lineChartData,
   }).render();
@@ -609,7 +625,7 @@ function createHeatMap(selectedScheduleData){
   // Configurações do gráfico
   const heatMapConfig = {
     type: 'heatmap',
-    renderAt: 'graphs',
+    renderAt: 'heatmap-container',
     width: '100%',
     height: '800',
     dataFormat: 'json',
@@ -779,6 +795,8 @@ function prepareChordData(schedulesData) {
   return chordData;
 }
 
+
+
 // Chamar a função para criar o diagrama de chord
 //createChordDiagram(selectedScheduleData);
 
@@ -853,9 +871,4 @@ function prepareChordData(schedulesData) {
 
 // Chamar a função para criar o diagrama de chord
 //createChordDiagram(schedulesData);
-
-
-
-
-
 }
