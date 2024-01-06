@@ -75,7 +75,7 @@ function parseURLs(urls, e, hiddenDiv) {
         if(urlsProcessed === urls.length){
           dynamicCriteriums.style.display = "block"
           schedulesData = orderSchedulesData(schedulesData)
-          createTabulator(schedulesData, graphs, downloadContainer, modifiableTabulator)
+          createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator)
           createLineChart()
         }
       }
@@ -413,7 +413,7 @@ const columns = Object.keys(scheduleData[0]).map(key => {
 }
 
 // Recebe todos os dados e cria a tabela do Tabulator
-function createTabulator(schedulesData, graphs, downloadContainer, modifiableTabulator){
+function createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator){
   console.log(schedulesData)
   const scheduleIds = Object.keys(schedulesData);
 
@@ -454,9 +454,13 @@ function createTabulator(schedulesData, graphs, downloadContainer, modifiableTab
       insertDownloadButton(downloadContainer, selectedScheduleData);
     }
     else{
-      graphs.innerHTML = ""
+      heatmapContainer.innerHTML = ""
       downloadContainer.innerHTML = ""
       modifiableTabulator.innerHTML = ""
+      if (modifiableTabulator.classList.contains('tabulator')) {
+        modifiableTabulator.classList.remove('tabulator');
+      }
+
     }
   });
 }

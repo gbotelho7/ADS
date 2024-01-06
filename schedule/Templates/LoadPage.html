@@ -55,7 +55,7 @@
       URL Input
       
       <br><br>
-      <input type="file" id="csvScheduleFileInput" style="display: block"; multiple>
+      <input type="file" id="csvScheduleFileInput" style="display: block; align-items: center;"; multiple>
       
       <div id="csvScheduleUrlInput" style="display: none;">
         <div id="urlInputs">
@@ -158,7 +158,6 @@
     <h4>Heatmap de Ocupação de Salas</h4>
     <div id="heatmap-container"></div>
     <div id="chord-diagram"></div>
-    <div id="graphs"></div>
     <h4>Tabela Alterável com Critérios</h4>
     <div id="modifiable-tabulator"></div>
     <h4>Pode fazer o Download do conteudo da tabela acima nos seguintes formatos</h4>
@@ -182,11 +181,12 @@
     const toggleSwitch2 = document.getElementById('toggleSwitch2');
 
     const dynamicCriteriums = document.getElementById('dynamicCriteriums');
-    const graphs = document.getElementById('graphs');
     const chartContainer = document.getElementById('chart-container');
     const lineChartContainer = document.getElementById('line-chart-container');
     const downloadContainer = document.getElementById('download-container');
     const modifiableTabulator = document.getElementById('modifiable-tabulator');
+    const heatmapContainer = document.getElementById('heatmap-container');
+
     
     const formulaSubmit = document.getElementById("criteriumFormulaSubmit") 
     const textSubmit = document.getElementById("criteriumTextSubmit")
@@ -214,7 +214,7 @@
       //console.log(criteriumFormulaInputValue.value)
       schedulesData = evaluateDynamicFormulaCriterium(schedulesData, criteriumFormulaInputValue.value)
       console.log(schedulesData)
-      createTabulator(schedulesData, graphs, downloadContainer, modifiableTabulator)
+      createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator)
       createLineChart()
       //TODO Fazer Update aos Graficos
     })
@@ -223,7 +223,7 @@
     textSubmit.addEventListener("click", () => {
       schedulesData = evaluateDynamicTextCriterium(schedulesData, dropdown.value, criteriumTextInputValue.value)
       console.log(schedulesData)
-      createTabulator(schedulesData, graphs, downloadContainer, modifiableTabulator)
+      createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator)
       createLineChart()
       //TODO Fazer Update aos Graficos
     })
@@ -286,7 +286,7 @@
             if(filesProcessed === files.length){ //Para só criar Tabulator após todos os ficheiros serem processados
               dynamicCriteriums.style.display = "block"
               schedulesData = orderSchedulesData(schedulesData)
-              createTabulator(schedulesData, graphs, downloadContainer, modifiableTabulator)
+              createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator)
               createLineChart()
             }
           }
@@ -311,11 +311,15 @@
             createClassRoomsDictionary(results)
             console.log(classRoomDictionary) // Dicionário com as salas e as suas caracteristicas
             dynamicCriteriums.style.display = "none"
-            graphs.innerHTML = ""
+            heatmapContainer.innerHTML = ""
             chartContainer.innerHTML = ""
             lineChartContainer.innerHTML = ""
             downloadContainer.innerHTML = ""
             modifiableTabulator.innerHTML = ""
+            if (modifiableTabulator.classList.contains('tabulator')) {
+              modifiableTabulator.classList.remove('tabulator');
+            }
+
           }
         });
       saveSettings()
