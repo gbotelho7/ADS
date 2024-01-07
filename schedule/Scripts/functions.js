@@ -44,6 +44,24 @@ function handleParsedData(results, index, e, hiddenDiv, classroomsInput) {
     if(hiddenDiv.style.display === "block" && classroomsInput){
       hiddenDiv.style.display = "none"
     }
+    dynamicCriteriums.style.display = "none"
+    heatmapContainer.innerHTML = ""
+    chartContainer.innerHTML = ""
+    lineChartContainer.innerHTML = ""
+    downloadContainer.innerHTML = ""
+    modifiableTabulator.innerHTML = ""
+    h4Elements.forEach(element => {
+      element.style.display = 'none';
+    });
+    if (modifiableTabulator.classList.contains('tabulator')) {
+      modifiableTabulator.classList.remove('tabulator'); 
+    }
+    if (chartContainer.classList.contains('tabulator')) {
+      chartContainer.classList.remove('tabulator'); 
+    }
+    for(let i = 0; i < graphs.length; i++){
+      graphs[i].innerHTML = ''
+    }
     e.target.value = "";
     if(!headersMatch){
       alert("Os cabeçalhos das configurações não correspondem aos do Ficheiro. Certifique-se de que o cabeçalho e o delimitador estão corretos. A tabela anterior será eliminada");
@@ -70,7 +88,25 @@ function parseURLs(urls, e, hiddenDiv, h4Elements, graphs) {
         errors += 1
         urlsProcessed++;
         if(urls.length === errors){
-          alert("Nenhum dos urls submetidos não são válidos")
+          alert("Nenhum dos urls submetidos é válido")
+          dynamicCriteriums.style.display = "none"
+          heatmapContainer.innerHTML = ""
+          chartContainer.innerHTML = ""
+          lineChartContainer.innerHTML = ""
+          downloadContainer.innerHTML = ""
+          modifiableTabulator.innerHTML = ""
+          h4Elements.forEach(element => {
+            element.style.display = 'none';
+          });
+          if (modifiableTabulator.classList.contains('tabulator')) {
+            modifiableTabulator.classList.remove('tabulator'); 
+          }
+          if (chartContainer.classList.contains('tabulator')) {
+            chartContainer.classList.remove('tabulator'); 
+          }
+          for(let i = 0; i < graphs.length; i++){
+            graphs[i].innerHTML = ''
+          }
         }
         else{
           if (urlsProcessed === urls.length) {

@@ -355,8 +355,13 @@
               element.style.display = 'none';
             });
             if (modifiableTabulator.classList.contains('tabulator')) {
-              modifiableTabulator.classList.remove('tabulator');
-              
+              modifiableTabulator.classList.remove('tabulator'); 
+            }
+            if (chartContainer.classList.contains('tabulator')) {
+              chartContainer.classList.remove('tabulator'); 
+            }
+            for(let i = 0; i < graphs.length; i++){
+              graphs[i].innerHTML = ''
             }
 
           }
