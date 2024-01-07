@@ -296,6 +296,16 @@
         Papa.parse(file, {
           delimiter: csvSeparator,
           header: true,
+          error: function () {
+            filesProcessed += 1
+            console.log("Erro")
+            if(filesProcessed === files.length){
+              dynamicCriteriums.style.display = "block"
+              schedulesData = orderSchedulesData(schedulesData)
+              createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, h4Elements, graphs)
+              createLineChart(h4Elements)
+            }
+          },
           complete: function (results) {
             const scheduleId = `Horário ${i + 1}`
             const scheduleData = { data: results.data };

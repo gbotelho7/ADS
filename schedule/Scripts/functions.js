@@ -18,12 +18,13 @@ function handleParsedData(results, index, e, hiddenDiv, classroomsInput) {
   else if(Object.keys(dictionary).length === 0 && !classroomsInput){
     headersMatch = defaultHeadersArray.every((header) => results.meta.fields.includes(header.trim()));
   } else {
-    headersMatch = Object.values(dictionary).every((header) => results.meta.fields.includes(header.trim()));
-    // console.log(Object.values(dictionary))
-    // console.log(results.meta.fields)
-    // console.log(headersMatch)
+    headersMatch = Object.values(dictionary).every((header) =>
+      results.meta.fields.some((field) =>
+        field.trim().toLowerCase() === header.trim().toLowerCase()
+      )
+    );
   }
-  //console.log(headersMatch)
+
 
   const dateFormatsMatch = dateColumns.split(";").every((column) =>
     results.meta.fields.includes(column) &&
@@ -58,12 +59,30 @@ function handleParsedData(results, index, e, hiddenDiv, classroomsInput) {
 function parseURLs(urls, e, hiddenDiv, h4Elements, graphs) {
   schedulesData = []
   urlsProcessed = 0 
+  errors = 0
   for (let i = 0; i < urls.length; i++) {
       const url = urls[i];
       Papa.parse(url, {
       download: true,
       delimiter: csvSeparator,
       header: true,
+      error: function () {
+        errors += 1
+        urlsProcessed++;
+        if(urls.length === errors){
+          alert("Nenhum dos urls submetidos não são válidos")
+        }
+        else{
+          if (urlsProcessed === urls.length) {
+            dynamicCriteriums.style.display = "block"
+            schedulesData = orderSchedulesData(schedulesData)
+            createTabulator(schedulesData, heatmapContainer, downloadContainer, modifiableTabulator, h4Elements, graphs)
+            console.log("fiz tabulator")
+            createLineChart(h4Elements)
+          }
+        }
+        
+      },
       complete: function (results) {
         const scheduleId = `Horário ${i + 1}`
         const scheduleData = { data: results.data };
@@ -337,10 +356,10 @@ function evaluateDynamicTextCriterium(schedulesData, column, inputText) {
 function updateDynamicCriteriums(dropdown){
   dropdown.innerHTML = '';
   //console.log("Teste " + dictionary)
-  for (let key of Object.keys(dictionary)) {
+  for (let value of Object.values(dictionary)) {
     const option = document.createElement('option');
-    option.value = key;
-    option.text = key;
+    option.value = value;
+    option.text = value;
     dropdown.appendChild(option);
   }
 }
