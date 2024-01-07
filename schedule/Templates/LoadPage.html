@@ -42,30 +42,8 @@
     <h3>Ficheiro de Salas</h3>
     <input type="file" id="csvClassroomFileInput">
     <br>
-    <div style="display: none" id="after-classrooms">
-      
-      <br>
-      <h3>Ficheiro de Horário</h3>
-      
-      File Input
-      <label class="switch">
-        <input type="checkbox" id="toggleSwitch1">
-        <span class="slider"></span>
-      </label>
-      URL Input
-      
-      <br><br>
-      <input type="file" id="csvScheduleFileInput"; multiple>
-      <br><br>
-      <div id="csvScheduleUrlInput" style="display: none;">
-        <div id="urlInputs">
-          <input type="text" class="urlInput" placeholder="Enter URL">
-        </div>
-        <button id="parseButton">Submeter URL</button>
-      </div>
-
-      <br>
-      <button id="show-form-button">Alterar Configurações do Ficheiro</button>
+    <br>
+    <button id="show-form-button">Alterar Configurações do Ficheiro</button>
       
       <form id="hidden-form" style="display: none;">
         <h3>Estas são as definições atuais, pretende alterar alguma?</h3>
@@ -119,6 +97,31 @@
         <br><br>
         <input type="submit" value="Submeter">
       </form>
+    <br>
+    <div style="display: none" id="after-classrooms">
+      
+      <br>
+      <h3>Ficheiro de Horário</h3>
+      
+      File Input
+      <label class="switch">
+        <input type="checkbox" id="toggleSwitch1">
+        <span class="slider"></span>
+      </label>
+      URL Input
+      
+      <br><br>
+      <input type="file" id="csvScheduleFileInput"; multiple>
+      <br><br>
+      <div id="csvScheduleUrlInput" style="display: none;">
+        <div id="urlInputs">
+          <input type="text" class="urlInput" placeholder="Enter URL">
+        </div>
+        <button id="parseButton">Submeter URL</button>
+      </div>
+
+      <br>
+      
     </div>
     <div id="dynamicCriteriums" style="display: none;">
       <br>

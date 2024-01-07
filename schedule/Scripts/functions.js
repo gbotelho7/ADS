@@ -478,7 +478,6 @@ function createTabulator(schedulesData, heatmapContainer, downloadContainer, mod
       createTop10Chart(selectedScheduleData)
       createPieChart(selectedScheduleData)
       createRequisitesChart(selectedScheduleData)
-      //createChordDiagram(selectedScheduleData)
       modifiableDataTabulator = createModifiableTabulator(selectedScheduleData, elementList)
       insertDownloadButton(downloadContainer, selectedScheduleData, elementList);
     }
@@ -491,9 +490,9 @@ function createTabulator(schedulesData, heatmapContainer, downloadContainer, mod
       });
       if (modifiableTabulator.classList.contains('tabulator')) {
         modifiableTabulator.classList.remove('tabulator');
-        h4Elements.forEach(element => {
-          element.style.display = 'none';
-        });
+        for(let i = 2; i< h4Elements.length; i++){
+          h4Elements[i].style.display = 'none';
+        }
       }
     }
   });
@@ -827,12 +826,13 @@ function createPieChart(data) {
         plottooltext: "<b>$percentValue</b> das salas têm uma $label",
         subCaption: 'Total de Ocorrências: ' + dataLength,
         showPercentValues: '0',
+        showLabels: '0',
         alignCaptionWithCanvas: '0',
         captionPadding: '0',
         decimals: '1',
         theme: 'fusion',
         legendposition: "bottom",
-        showlegend: "0",
+        showlegend: "1",
       },
       data: chartData // This is the data prepared earlier
     }
@@ -846,56 +846,21 @@ function createPieChart(data) {
 }
 
 function createRequisitesChart(data){
-  // let requisitesNotMetMap = new Map();
-  // data.forEach(entry => {
-  //   const sala = entry[dictionary['Sala da aula']];
-  //   const requisitesNotMet = entry['RequisitesNotMet'];
-  //   //console.log(sala, overcrowding)
-  //   if (requisitesNotMet && sala) {
-  //     if (!requisitesNotMetMap.has(sala)) {
-  //       requisitesNotMetMap.set(sala, 1);
-  //     } else {
-  //       const currentCount = requisitesNotMetMap.get(sala);
-  //       requisitesNotMetMap.set(sala, currentCount + 1);
-  //     }
-  //   }
-  // });
-  // requisitesNotMetMap = new Map([...requisitesNotMetMap.entries()].sort());
-  // console.log(requisitesNotMetMap)
- 
-  function findSubstringWithNumberAndLetter(inputString) {
-    for (let i = 0; i < inputString.length; i++) {
-      if (!isNaN(parseInt(inputString[i]))) {
-        for (let j = i + 1; j < inputString.length; j++) {
-          if (/[a-zA-Z]/.test(inputString[j])) {
-            return inputString.substring(i, j + 1);
-          }
-        }
-      }
-      else if (/[a-zA-Z]/.test(inputString[i])) {
-        for (let j = i + 1; j < inputString.length; j++) {
-          if (!isNaN(parseInt(inputString[j]))) {
-            return inputString.substring(i, j + 1);
-          }
-        }
-      }
-    }
-    return null;
-  }
 
   const newMap = new Map();
 
   // Iterate through each key-value pair in the map
+  let counter = 0
   data.forEach(entry => {
-    const sala = entry[dictionary['Sala da aula']];
     const requisitesNotMet = entry['RequisitesNotMet'];
-    const substring = findSubstringWithNumberAndLetter(sala);
-    if (substring && requisitesNotMet) {
-      if (!newMap.has(substring)) {
-        newMap.set(substring, 1);
+    const characteristics = entry[dictionary['Características da sala pedida para a aula']];
+    if (characteristics && requisitesNotMet) {
+      counter ++
+      if (!newMap.has(characteristics)) {
+        newMap.set(characteristics, 1);
       } else {
-        const currentCount = newMap.get(substring) + 1;
-        newMap.set(substring, currentCount);
+        const currentCount = newMap.get(characteristics) + 1;
+        newMap.set(characteristics, currentCount);
       }
     }
   })
@@ -915,11 +880,13 @@ function createRequisitesChart(data){
     renderAt: 'extra-graph3',
     dataSource: {
       chart: {
-        plottooltext: "<b>$percentValue</b> das falhas de atribuição ocorrem na zona <b>$label</b>",
-        caption: 'Secções onde existem mais falhas de atribuição de salas',
-        subCaption: 'Substring Counts',
-        showPercentValues: '1',
-        showLegend: '0',
+        plottooltext: "<b>$percentValue</b> das caraterísticas não pedidas são <b>$label</b>",
+        caption: 'Análise das caraterísticas não correspondidas',
+        subcaption: 'Total de Ocorrências: ' +counter ,
+        showPercentValues: '0',
+        showLabels: '0',
+        showLegend: '1',
+        legendposition: "bottom",
         theme: 'fusion'
       },
       data: labels.map((label, index) => ({
@@ -935,195 +902,3 @@ function createRequisitesChart(data){
   });
 }
 
-//CHORD DIAGRAM
-
-function createChordDiagram(schedulesData) {
-  // Preparar dados para o diagrama de chord
-  const chordData = prepareChordData(schedulesData);
-
-  // Configurações do gráfico de chord
-  const chordConfig = {
-    width: 800,
-    height: 800,
-    margin: { top: 20, right: 20, bottom: 20, left: 20 },
-    padAngle: 0.02,
-    sortGroups: d3.descending,
-    sortSubgroups: d3.descending,
-  };
-
-  // Selecione o elemento SVG para o diagrama de chord
-  const svg = d3.select('#chord-diagram')
-    .append('svg')
-    .attr('width', chordConfig.width)
-    .attr('height', chordConfig.height)
-    .append('g')
-    .attr('transform', `translate(${chordConfig.width / 2},${chordConfig.height / 2})`);
-
-  try {
-    // Crie o layout de chord usando d3-chord
-    const chordLayout = d3.chord()
-      .padAngle(chordConfig.padAngle)
-      .sortGroups(chordConfig.sortGroups)
-      .sortSubgroups(chordConfig.sortSubgroups);
-
-    const chords = chordLayout(chordData.matrix);
-
-    // Configure e desenhe os arcos
-    svg.selectAll('path')
-      .data(chords)
-      .enter()
-      .append('path')
-      .attr('d', d3.ribbon().radius(200))
-      .style('fill', 'steelblue')
-      .style('stroke', 'black');
-
-  } catch (error) {
-    console.error("Error creating chord diagram:", error);
-  }
-}
-
-
-
-  
-
-function prepareChordData(schedulesData) {
-  console.log("Preparing data for chord diagram...");
-
-  // Criar um objeto para contar o número total de sobrelotações entre pares de cursos
-  const overcrowdingCounts = {};
-
-  // Iterar sobre os dados de horários
-  Object.keys(schedulesData).forEach((scheduleId) => {
-    const overcrowdingData = schedulesData[scheduleId].criteriums['Overcrowding'];
-
-        // Add a check for the existence of 'Overcrowding' property
-    if (overcrowdingData) {
-      // Proceed with your existing code that uses overcrowdingData
-    } else {
-      // Handle the case when 'Overcrowding' property is not present
-      console.error("Overcrowding property is undefined for scheduleId:", scheduleId);
-    }
-    const courses = Object.keys(overcrowdingData[1]);
-
-    // Calcular as sobrelotações entre todos os pares de cursos
-    for (let i = 0; i < courses.length; i++) {
-      for (let j = i + 1; j < courses.length; j++) {
-        const coursePair = [courses[i], courses[j]].sort().join('-');
-        const count = overcrowdingData[1][courses[i]] + overcrowdingData[1][courses[j]];
-
-        // Adicionar ao contador total
-        overcrowdingCounts[coursePair] = (overcrowdingCounts[coursePair] || 0) + count;
-      }
-    }
-  });
-
-  // Ordenar os pares de cursos por contagem decrescente
-  const sortedPairs = Object.keys(overcrowdingCounts).sort((a, b) => overcrowdingCounts[b] - overcrowdingCounts[a]);
-
-  // Selecionar os 10 principais pares
-  const topPairs = sortedPairs.slice(0, 10);
-
-  // Estrutura de dados para o diagrama de chord
-  const chordData = {
-    matrix: [],
-    entities: [],
-  };
-
-  // Mapear os pares de cursos para as entidades
-  chordData.entities = topPairs.map((pair) => pair.split('-'));
-
-  // Preencher a matriz com o número de sobrelotações compartilhadas
-  chordData.matrix = topPairs.map((pair) => {
-    const connections = new Array(topPairs.length).fill(0);
-
-    topPairs.forEach((otherPair, index) => {
-      const sharedOvercrowdedRooms = (pair === otherPair) ? overcrowdingCounts[pair] : 0;
-      connections[index] = sharedOvercrowdedRooms;
-    });
-
-    return connections;
-  });
-
-  console.log("Chord data prepared:", chordData);
-
-  return chordData;
-}
-
-
-
-
-
-// Chamar a função para criar o diagrama de chord
-//createChordDiagram(selectedScheduleData);
-
-
-
-
-// // Função para preparar os dados para o diagrama de chord
-// function prepareChordData(schedulesData) {
-//   console.log("Preparing data for chord diagram...");
-//   // Estrutura de dados para o diagrama de chord
-//   const chordData = {
-//     matrix: [],
-//     entities: [],
-//   };
-
-//   // Mapear os turnos ou turmas para as entidades
-//   const scheduleIds = Object.keys(schedulesData);
-//   chordData.entities = scheduleIds.map((scheduleId) => `Schedule ${scheduleId}`);
-
-//   // Preencher a matriz com o número de salas de aula sobrelotadas compartilhadas
-//   chordData.matrix = scheduleIds.map((scheduleId) => {
-//     const connections = new Array(scheduleIds.length).fill(0);
-
-//     scheduleIds.forEach((otherScheduleId, index) => {
-//       const sharedOvercrowdedRooms = calculateSharedOvercrowdedRooms(
-//         schedulesData[scheduleId].criteriums['Overcrowding'][1],
-//         schedulesData[otherScheduleId].criteriums['Overcrowding'][1]
-//       );
-//       connections[index] = sharedOvercrowdedRooms;
-//     });
-
-//     return connections;
-//   });
-
-//   console.log("Chord data prepared:", chordData);
-
-//   return chordData;
-// }
-
-// // Função para calcular o número de salas de aula sobrelotadas compartilhadas
-// function calculateSharedOvercrowdedRooms(rooms1, rooms2) {
-//   const sharedRooms = rooms1.filter((room) => rooms2.includes(room));
-//   return sharedRooms.length;
-// }
-
-
-
-//   // Função para criar e exibir o diagrama de chord para sobrelotação de aulas
-// function createChordDiagram(schedulesData) {
-//   // Preparar dados para o diagrama de chord
-//   const chordData = prepareChordData(schedulesData);
-
-//   // Configurações do gráfico de chord
-//   const chordConfig = {
-//     width: 800,
-//     height: 800,
-//     margin: { top: 20, right: 20, bottom: 20, left: 20 },
-//     padAngle: 0.02,
-//     sortGroups: d3.descending,
-//     sortSubgroups: d3.descending,
-//   };
-
-//   try {
-//     const chord = new Chord(chordData, chordConfig);
-//     chord.draw('chord-diagram');
-//   } catch (error) {
-//     console.error("Error creating chord diagram:", error);
-//   }
-// }
-
-
-
-// Chamar a função para criar o diagrama de chord
-//createChordDiagram(schedulesData);
