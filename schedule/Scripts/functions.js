@@ -1051,6 +1051,8 @@ function prepareChordData(schedulesData) {
 
 
 
+
+
 // Chamar a função para criar o diagrama de chord
 //createChordDiagram(selectedScheduleData);
 
