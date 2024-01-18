@@ -50,6 +50,7 @@ function handleParsedData(results, index, e, hiddenDiv, classroomsInput) {
     lineChartContainer.innerHTML = ""
     downloadContainer.innerHTML = ""
     modifiableTabulator.innerHTML = ""
+    heatmapFilter.innerHTML = ""
     h4Elements.forEach(element => {
       element.style.display = 'none';
     });
@@ -95,6 +96,7 @@ function parseURLs(urls, e, hiddenDiv, h4Elements, graphs) {
           lineChartContainer.innerHTML = ""
           downloadContainer.innerHTML = ""
           modifiableTabulator.innerHTML = ""
+          heatmapFilter.innerHTML = ""
           h4Elements.forEach(element => {
             element.style.display = 'none';
           });
@@ -217,14 +219,14 @@ function criteriumOvercrowding(results){
     if(lotacao - inscritos < 0 ){
       countOvercrowding++
       countTotalStudentsOvercrowding += Math.abs(lotacao - inscritos)
-      results.data[i]['OverCrowding'] = true 
+      results.data[i]['Sobrelotações'] = true 
     } else {
-      results.data[i]['OverCrowding'] = false
+      results.data[i]['Sobrelotações'] = false
     }
   } 
   let criteriumArray = {}
-  criteriumArray['Overcrowding'] =countOvercrowding
-  criteriumArray['OvercrowdingStudents'] = countTotalStudentsOvercrowding;
+  criteriumArray['Sobrelotações'] = countOvercrowding
+  criteriumArray['Alunos a mais (Sobrelotações)'] = countTotalStudentsOvercrowding;
 
   results['criteriums'] = criteriumArray
   return results
@@ -255,14 +257,14 @@ function criteriumOverlaping(results){
           }
         }
         if(isTrue){
-          results.data[i]['OverLaping'] = true
+          results.data[i]['Sobreposição'] = true
         } else{
-          results.data[i]['OverLaping'] = false
+          results.data[i]['Sobreposição'] = false
         }
       }
     });
   }
-  results.criteriums['OverLaping'] = countOverlaping
+  results.criteriums['Sobreposição'] = countOverlaping
   return results
 }
 
@@ -276,23 +278,23 @@ function criteriumClassRequisites(results){
     if(roomName in classRoomDictionary){
       if(!classRoomDictionary[roomName].includes(askedRequisites)){
         countRequisitesNotMet++
-        results.data[i]['RequisitesNotMet'] = true
-        results.data[i]['NoClassroom'] = false
+        results.data[i]['Requisitos não cumpridos'] = true
+        results.data[i]['Sem Sala'] = false
       } else{
-        results.data[i]['RequisitesNotMet'] = false
-        results.data[i]['NoClassroom'] = false
+        results.data[i]['Requisitos não cumpridos'] = false
+        results.data[i]['Sem Sala'] = false
       }
-    } else if(roomName === "") {
+    } else if(roomName === "" && askedRequisites != "Não necessita de sala") { //"
       countNoClassroom++
-      results.data[i]['RequisitesNotMet'] = true
-      results.data[i]['NoClassroom'] = true
+      results.data[i]['Requisitos não cumpridos'] = true
+      results.data[i]['Sem Sala'] = true
     } else {
-      results.data[i]['RequisitesNotMet'] = false
-      results.data[i]['NoClassroom'] = false
+      results.data[i]['Requisitos não cumpridos'] = false
+      results.data[i]['Sem Sala'] = false
     }
   }
-  results.criteriums['RequisitesNotMet'] = countRequisitesNotMet
-  results.criteriums['NoClassroom'] = countNoClassroom
+  results.criteriums['Requisitos não cumpridos'] = countRequisitesNotMet
+  results.criteriums['Sem Sala'] = countNoClassroom
   return results
 }
 
@@ -509,7 +511,7 @@ function createTabulator(schedulesData, heatmapContainer, downloadContainer, mod
     if(data.length !== 0){
       let selectedScheduleData  = schedulesData[data[0]['scheduleId']].data
       console.log(selectedScheduleData)
-      createHeatMap(selectedScheduleData, elementList)
+      createHeatMap(selectedScheduleData, elementList, '')
       elementList[5].style.display = "block"
       createTop10Chart(selectedScheduleData)
       createPieChart(selectedScheduleData)
@@ -521,6 +523,7 @@ function createTabulator(schedulesData, heatmapContainer, downloadContainer, mod
       heatmapContainer.innerHTML = ""
       downloadContainer.innerHTML = ""
       modifiableTabulator.innerHTML = ""
+      heatmapFilter.innerHTML = ""
       graphs.forEach(graph => {
         graph.innerHTML = '';
       });
@@ -528,7 +531,7 @@ function createTabulator(schedulesData, heatmapContainer, downloadContainer, mod
         modifiableTabulator.classList.remove('tabulator');
         for(let i = 2; i< h4Elements.length; i++){
           h4Elements[i].style.display = 'none';
-        }
+        } 
       }
     }
   });
@@ -617,9 +620,9 @@ function createLineChart(elementList){
   const criteria = Object.keys(schedulesData[scheduleIds[0]].criteriums);
   const lineChartData = {
     chart: {
-      caption: "Criteria for Schedules",
-      xAxisName: "Criteriums",
-      yAxisName: "Values",
+      caption: "Critérios dos Horários",
+      xAxisName: "Critérios",
+      yAxisName: "Nº de Ocurrências",
       theme: "fusion",
     },
     categories: [
@@ -628,7 +631,7 @@ function createLineChart(elementList){
       },
     ],
     dataset: scheduleIds.map((id) => ({
-      seriesname: `Schedule ${id}`,
+      seriesname: id,
       data: criteria.map((criterion) => ({
         value: schedulesData[id].criteriums[criterion] || 0,
       })),
@@ -660,9 +663,68 @@ function countRoomUsageByStartTime(scheduleData) {
   return roomUsageByStartTime;
 }
 
-function createHeatMap(selectedScheduleData, elementList){
+
+function handleDropdownChange(selectedScheduleData, elementList, isFirst) {
+  const selectedDayOfWeek = document.getElementById('dayOfWeekDropdown').value;
+  console.log("Aconteceu")
+  // Filter data based on the selected day of week
+  const filteredData = (selectedDayOfWeek === 'all') ?
+    selectedScheduleData :
+    selectedScheduleData.filter(item => item[dictionary['Dia da Semana']] === selectedDayOfWeek);
+    if(isFirst){
+      return filteredData
+    } else {
+      createHeatMap(selectedScheduleData, elementList, filteredData)
+    }
+}
+
+
+function findFirstAndLastDate(filteredData) {
+  if (filteredData.length === 0) {
+    return null;
+  }
+
+  const diaValues = filteredData.map(item => parseDate(item[dictionary['Dia']]));
+  
+  diaValues.sort((a, b) => a - b);
+  console.log(diaValues)
+  const firstDate = formatDate(diaValues[0]);
+  const lastDate = formatDate(diaValues[diaValues.length - 1]);
+  console.log(firstDate, lastDate)
+  return { firstDate, lastDate };
+}
+
+function parseDate(dateString) {
+  const [day, month, year] = dateString.split('/').map(Number);
+  return new Date(year, month - 1, day); // Month is zero-based in JavaScript Dates
+}
+
+function formatDate(date) {
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+function createHeatMap(selectedScheduleData, elementList, filteredData){
+  if(filteredData === ''){
+    const dropdownContainer = document.getElementById('heatmap-filter');
+    dropdownContainer.innerHTML = `
+      <label for="dayOfWeekDropdown">Selecionar Dia da Semana:</label>
+      <select id="dayOfWeekDropdown">
+        ${getDayOfWeekOptions(selectedScheduleData)}
+      </select>
+      <br>
+      <h4 id="h4-date"></h4>
+    `;
+    document.getElementById('dayOfWeekDropdown').addEventListener('change', () => handleDropdownChange(selectedScheduleData, elementList, false));
+    filteredData = handleDropdownChange(selectedScheduleData, elementList, true)
+  }
+  dates = findFirstAndLastDate(filteredData)
+  document.getElementById('h4-date').textContent = "Os dados apresentados abaixo representam o intervalo de dias entre " + dates.firstDate + " e " + dates.lastDate + "."
+  document.getElementById('h4-date').style.display = "block"
   elementList[2].style.display = "block"
-  const roomUsageByStartTime = countRoomUsageByStartTime(selectedScheduleData)
+  const roomUsageByStartTime = countRoomUsageByStartTime(filteredData)
   console.log(roomUsageByStartTime)
     // Converta os dados para o formato esperado pela FusionCharts
   const heatMapChartData = [];
@@ -684,6 +746,13 @@ function createHeatMap(selectedScheduleData, elementList){
 
   const values = heatMapChartData.map(item => parseInt(item.value, 10));
 
+
+  function getDayOfWeekOptions(data) {
+    const uniqueDaysOfWeek = [...new Set(data.map(item => item[dictionary['Dia da Semana']]))];
+    return uniqueDaysOfWeek.map(dayOfWeek => `<option value="${dayOfWeek}">${dayOfWeek}</option>`).join('');
+  }
+
+  // document.getElementById('dayOfWeekDropdown').addEventListener('change', handleDropdownChange(selectedScheduleData));
   // Step 2: Find the maximum and minimum values
   const maxValue = Math.max(...values);
   const minValue = Math.min(...values);
@@ -719,32 +788,32 @@ function createHeatMap(selectedScheduleData, elementList){
         ],
       "colorrange": {
         "gradient": "1",
-        "startlabel": "Muito Bom",
+        "startlabel": "Muito Livre",
         "code": "00A000",
         "color": [
             {
                 "code": "00C000",
                 "minvalue": `${categoryStart1}`,
                 "maxvalue": `${categoryStart2}`,
-                "label": "Bom"
+                "label": "Livre"
             },
             {
                 "code": "B0B000",
                 "minvalue": `${categoryStart2}`,
                 "maxvalue": `${categoryStart3}`,
-                "label": "Médio"
+                "label": "Média Ocupação"
             },
             {
                 "code": "FFA040",
                 "minvalue": `${categoryStart3}`,
                 "maxvalue": `${categoryStart4}`,
-                "label": "Mau"
+                "label": "Ocupado"
             },
             {
               "code": "A02020",
               "minvalue": `${categoryStart4}`,
               "maxvalue": `${maxValue}`,
-              "label": "Muito Mau"
+              "label": "Muito Ocupado"
           }
         ]
       }
@@ -764,13 +833,14 @@ function createHeatMap(selectedScheduleData, elementList){
 
 }
 
+
 function createTop10Chart(data) {
   const overcrowdingMap = new Map();
   console.log(data)
   // Loop through the data and count OverCrowding occurrences for each Sala
   data.forEach(entry => {
     const sala = entry[dictionary['Sala da aula']];
-    const overcrowding = entry['OverCrowding'];
+    const overcrowding = entry['Sobrelotações'];
     //console.log(sala, overcrowding)
     if (overcrowding && sala) {
       if (!overcrowdingMap.has(sala)) {
@@ -830,8 +900,8 @@ function createPieChart(data) {
   ]);
 
   data.forEach(entry => {
-    const requisitesNotMet = entry['RequisitesNotMet'];
-    const noClassroom = entry['NoClassroom'];
+    const requisitesNotMet = entry['Requisitos não cumpridos'];
+    const noClassroom = entry['Sem Sala'];
 
     if (requisitesNotMet === true && noClassroom === false) {
       criteriaMap.set('Atribuição Incorreta', criteriaMap.get('Atribuição Incorreta') + 1);
@@ -888,7 +958,7 @@ function createRequisitesChart(data){
   // Iterate through each key-value pair in the map
   let counter = 0
   data.forEach(entry => {
-    const requisitesNotMet = entry['RequisitesNotMet'];
+    const requisitesNotMet = entry['Requisitos não cumpridos'];
     const characteristics = entry[dictionary['Características da sala pedida para a aula']];
     if (characteristics && requisitesNotMet) {
       counter ++

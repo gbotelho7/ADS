@@ -51,11 +51,15 @@
     </div>
     <br>
     <br>
-    <h3>Ficheiro de Salas</h3>
-    <input type="file" id="csvClassroomFileInput">
-    <br>
-    <br>
-    <button id="show-form-button">Alterar Configurações do Ficheiro</button>
+    <button id="show-form-button">Alterar Configurações do Ficheiro</button> 
+    <button class="primary" onclick="window.dialog.showModal();">?</button>
+
+    <dialog id="dialog">
+      <h2>Hello.</h2>
+      <p>A CSS-only modal based on the <a href="https://developer.mozilla.org/es/docs/Web/CSS/::backdrop" target="_blank">::backdrop</a> pseudo-class. Hope you find it helpful.</p>
+      <p>You can also change the styles of the <code>::backdrop</code> from the CSS.</p>
+      <button onclick="window.dialog.close();" aria-label="close" class="x">❌</button>
+    </dialog>
       
       <form id="hidden-form" style="display: none;">
         <h3>Estas são as definições atuais, pretende alterar alguma?</h3>
@@ -109,25 +113,30 @@
         <br><br>
         <input type="submit" value="Submeter">
       </form>
+    <h3>Ficheiro de Salas</h3>
+    <input type="file" id="csvClassroomFileInput">
+    <br>
+    <br>
+    
     <br>
     <div style="display: none" id="after-classrooms">
       
       <br>
       <h3>Ficheiro de Horário</h3>
       
-      File Input
+      Submeter Ficheiros
       <label class="switch">
         <input type="checkbox" id="toggleSwitch1">
         <span class="slider"></span>
       </label>
-      URL Input
+      Submeter URL's
       
       <br><br>
       <input type="file" id="csvScheduleFileInput"; multiple>
       <br><br>
       <div id="csvScheduleUrlInput" style="display: none;">
         <div id="urlInputs">
-          <input type="text" class="urlInput" placeholder="Enter URL">
+          <input type="text" class="urlInput" placeholder="Colocar URL">
         </div>
         <button id="parseButton">Submeter URL</button>
       </div>
@@ -148,7 +157,7 @@
         Critérios Dinamicos com Formula:
         <!--<input type="text" id="criteriumFormulaInputValue" placeholder="Enter Criterium">
         <input type="submit"  id="criteriumFormulaSubmit">-->
-        <input list="formulaOptions" id="criteriumFormulaInputValue" placeholder="Enter Criterium">
+        <input list="formulaOptions" id="criteriumFormulaInputValue" placeholder="Escrever Critério">
         <datalist id="formulaOptions"></datalist>
         <button type="button" id="criteriumFormulaSubmit">Submeter</button>
       </div>
@@ -159,7 +168,7 @@
         </select>
         <!--<input type="text" id="criteriumTextInputValue">
         <input type="submit"  id="criteriumTextSubmit">-->
-        <input list="textOptions" id="criteriumTextInputValue" placeholder="Enter Text">
+        <input list="textOptions" id="criteriumTextInputValue" placeholder="Escrever Texto">
         <datalist id="textOptions"></datalist>
         <button type="button" id="criteriumTextSubmit">Submeter</button>
       </div>
@@ -172,6 +181,7 @@
     <div id="line-chart-container"></div>
     <br>
     <h4 id="h4-heatmap">Heatmap de Ocupação de Salas</h4>
+    <div id="heatmap-filter"></div>
     <div id="heatmap-container"></div>
     <br>
     <h4 id="h4-extra">Gráficos extra </h4>
@@ -210,6 +220,7 @@
     const downloadContainer = document.getElementById('download-container');
     const modifiableTabulator = document.getElementById('modifiable-tabulator');
     const heatmapContainer = document.getElementById('heatmap-container');
+    const heatmapFilter = document.getElementById('heatmap-filter');
 
     const container = document.getElementById('extra-charts-container');
     const graphs = container.querySelectorAll('div');
@@ -222,6 +233,7 @@
 
     const hiddenDiv = document.getElementById("after-classrooms")
     const inputsHeaders = document.querySelectorAll('#headers input[type="text"]');
+
     
     const h4Elements = [
       document.getElementById("h4-table"),
@@ -299,6 +311,7 @@
       // inputsHeaders.forEach((input, index) => {
       //  dictionary[defaultHeadersArray[index]] = input.value;
       // });
+      alert("Alteração das configurações feita com sucesso!")
     });
 
     // Receber multiplos ficheiros de horários
@@ -363,6 +376,7 @@
             lineChartContainer.innerHTML = ""
             downloadContainer.innerHTML = ""
             modifiableTabulator.innerHTML = ""
+            heatmapFilter.innerHTML = ""
             h4Elements.forEach(element => {
               element.style.display = 'none';
             });
