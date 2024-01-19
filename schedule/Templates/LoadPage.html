@@ -51,7 +51,7 @@
     </div>
     <br>
     <br>
-    <button id="show-form-button">Alterar Configurações do Ficheiro</button> 
+    <button id="show-form-button">Alterar Configurações de Leitura dos Ficheiros</button> 
     <button class="primary" onclick="window.dialog.showModal();">?</button>
 
     <dialog id="dialog">
@@ -113,7 +113,7 @@
         <br><br>
         <input type="submit" value="Submeter">
       </form>
-    <h3>Ficheiro de Salas</h3>
+    <h3>Ficheiro de caraterização de Salas</h3>
     <input type="file" id="csvClassroomFileInput">
     <br>
     <br>
@@ -122,14 +122,14 @@
     <div style="display: none" id="after-classrooms">
       
       <br>
-      <h3>Ficheiro de Horário</h3>
+      <h3>Ficheiros de Horários</h3>
       
-      Submeter Ficheiros
+      Submeter Ficheiros Locais
       <label class="switch">
         <input type="checkbox" id="toggleSwitch1">
         <span class="slider"></span>
       </label>
-      Submeter URL's
+      Submeter Ficheiros Remotos
       
       <br><br>
       <input type="file" id="csvScheduleFileInput"; multiple>
@@ -146,7 +146,9 @@
     </div>
     <div id="dynamicCriteriums" style="display: none;">
       <br>
-      Critério Dinâmico em formula
+      <h3> Critérios Dinâmicos</h3>
+
+      Critério Dinâmico em fórmula
       <label class="switch">
         <input type="checkbox" id="toggleSwitch2">
         <span class="slider"></span>
@@ -154,7 +156,7 @@
       Critério Dinâmico de texto
       <br><br>
       <div id="criteriumFormulaInputs">
-        Critérios Dinamicos com Formula:
+        Critérios Dinâmicos com Fórmula:
         <!--<input type="text" id="criteriumFormulaInputValue" placeholder="Enter Criterium">
         <input type="submit"  id="criteriumFormulaSubmit">-->
         <input list="formulaOptions" id="criteriumFormulaInputValue" placeholder="Escrever Critério">
@@ -162,7 +164,7 @@
         <button type="button" id="criteriumFormulaSubmit">Submeter</button>
       </div>
       <div id="criteriumTextInputs" style="display: none;">
-        Critérios Dinamicos com Texto:
+        Critérios Dinâmicos com Texto:
         <select name="fields" id="dropdown">
           <option value="option1">Option 1</option>
         </select>
@@ -174,24 +176,24 @@
       </div>
     </div>
     <br>
-    <h4 id="h4-table">Lista de Horários</h4>
+    <h4 id="h4-table">Avaliação de critérios</h4>
     <div id="chart-container"></div>
     <br>
-    <h4 id="h4-line-chart" >Gráfico de Linhas dos Critérios</h4>
+    <h4 id="h4-line-chart" >Avaliação geral de critérios por horário</h4>
     <div id="line-chart-container"></div>
     <br>
-    <h4 id="h4-heatmap">Heatmap de Ocupação de Salas</h4>
+    <h4 id="h4-heatmap">Contagem de Ocupação de Salas</h4>
     <div id="heatmap-filter"></div>
     <div id="heatmap-container"></div>
     <br>
-    <h4 id="h4-extra">Gráficos extra </h4>
+    <h4 id="h4-extra">Análise detalhada de critérios</h4>
     <div id="extra-charts-container">
       <div id="extra-graph1"></div>
       <div id="extra-graph2"></div>
       <div id="extra-graph3"></div>
     </div>
     <br>
-    <h4 id="h4-modifiable">Tabela Alterável com Critérios</h4>
+    <h4 id="h4-modifiable">Edição do horário selecionado</h4>
     <div id="modifiable-tabulator"></div>
     <br>
     <h4 id="h4-download">Pode fazer o Download do conteúdo da tabela acima nos seguintes formatos</h4>

@@ -257,14 +257,14 @@ function criteriumOverlaping(results){
           }
         }
         if(isTrue){
-          results.data[i]['Sobreposição'] = true
+          results.data[i]['Sobreposições'] = true
         } else{
-          results.data[i]['Sobreposição'] = false
+          results.data[i]['Sobreposições'] = false
         }
       }
     });
   }
-  results.criteriums['Sobreposição'] = countOverlaping
+  results.criteriums['Sobreposições'] = countOverlaping
   return results
 }
 
@@ -279,22 +279,22 @@ function criteriumClassRequisites(results){
       if(!classRoomDictionary[roomName].includes(askedRequisites)){
         countRequisitesNotMet++
         results.data[i]['Requisitos não cumpridos'] = true
-        results.data[i]['Sem Sala'] = false
+        results.data[i]['Aulas Sem Sala'] = false
       } else{
         results.data[i]['Requisitos não cumpridos'] = false
-        results.data[i]['Sem Sala'] = false
+        results.data[i]['Aulas Sem Sala'] = false
       }
     } else if(roomName === "" && askedRequisites != "Não necessita de sala") { //"
       countNoClassroom++
       results.data[i]['Requisitos não cumpridos'] = true
-      results.data[i]['Sem Sala'] = true
+      results.data[i]['Aulas Sem Sala'] = true
     } else {
       results.data[i]['Requisitos não cumpridos'] = false
-      results.data[i]['Sem Sala'] = false
+      results.data[i]['Aulas Sem Sala'] = false
     }
   }
   results.criteriums['Requisitos não cumpridos'] = countRequisitesNotMet
-  results.criteriums['Sem Sala'] = countNoClassroom
+  results.criteriums['Aulas Sem Sala'] = countNoClassroom
   return results
 }
 
@@ -620,7 +620,7 @@ function createLineChart(elementList){
   const criteria = Object.keys(schedulesData[scheduleIds[0]].criteriums);
   const lineChartData = {
     chart: {
-      caption: "Critérios dos Horários",
+      caption: "Contagem de Critérios dos Horários",
       xAxisName: "Critérios",
       yAxisName: "Nº de Ocurrências",
       theme: "fusion",
@@ -777,8 +777,8 @@ function createHeatMap(selectedScheduleData, elementList, filteredData){
     dataFormat: 'json',
     dataSource: {
       "chart": {
-        caption: 'Heatmap de Uso de Sala',
-        subcaption: 'Por hora de início',
+        caption: 'Contagem de ocupação de salas',
+        subcaption: 'Por hora de início e dia da semana',
         theme: 'fusion',
       },
       "dataset": [
@@ -901,7 +901,7 @@ function createPieChart(data) {
 
   data.forEach(entry => {
     const requisitesNotMet = entry['Requisitos não cumpridos'];
-    const noClassroom = entry['Sem Sala'];
+    const noClassroom = entry['Aulas Sem Sala'];
 
     if (requisitesNotMet === true && noClassroom === false) {
       criteriaMap.set('Atribuição Incorreta', criteriaMap.get('Atribuição Incorreta') + 1);
