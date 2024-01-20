@@ -48,6 +48,11 @@
         <br>
       </div>
       <img src="..\Images\logo iscte.png" alt="logo-iscte">
+      <br>
+      <br>
+      <h3> Esta ferramenta permite a análise e a comparação de horários escolares, com o intuito de perceber qual destes é o mais indicado, através da avaliação de diferentes métricas.</h3>
+      <br>
+      <br>
     </div>
     <br>
     <br>
@@ -55,9 +60,17 @@
     <button class="primary" onclick="window.dialog.showModal();">?</button>
 
     <dialog id="dialog">
-      <h2>Hello.</h2>
-      <p>A CSS-only modal based on the <a href="https://developer.mozilla.org/es/docs/Web/CSS/::backdrop" target="_blank">::backdrop</a> pseudo-class. Hope you find it helpful.</p>
-      <p>You can also change the styles of the <code>::backdrop</code> from the CSS.</p>
+      <h2>Alterar Configurações de Leitura dos Ficheiros</h2>
+      <p>Para a realização da avaliação é necessário carregar dois tipos de ficheiros diferentes:</p>
+      
+      <ul>
+          <li><strong>Ficheiro de caraterização de salas:</strong> Ficheiro csv que contém a caraterização de todas as salas existentes, para que possa ser feita uma correspondência entre estas e os horários.</li>
+          <p>Exemplo: para verificar se uma sala contém os requisitos necessários para uma dada aula, é necessário verificar no ficheiro de caraterização de salas se a sala em questão possui essas caraterísticas.</p>
+          
+          <li><strong>Ficheiros de horários:</strong> Ficheiros csv que contêm as aulas todas de um determinado espaço temporal. É possível efetuar o carregamento de um ou mais ficheiros.</li>
+      </ul>
+      
+      <p>Para se proceder à leitura dos ficheiros, comece por verificar se as configurações de leitura de ambos os tipos de ficheiros correspondem às suas. Por exemplo, se no lugar do cabeçalho “Unidade de execução” os seus ficheiros de horário contiverem a designação “Unidade Curricular”, faça essa correspondência no local indicado. Por defeito, dentro das caixas de texto disponíveis, surgem as configurações já aplicadas.</p>
       <button onclick="window.dialog.close();" aria-label="close" class="x">❌</button>
     </dialog>
       
@@ -124,12 +137,33 @@
       <br>
       <h3>Ficheiros de Horários</h3>
       
+      
       Submeter Ficheiros Locais
       <label class="switch">
         <input type="checkbox" id="toggleSwitch1">
         <span class="slider"></span>
       </label>
       Submeter Ficheiros Remotos
+
+      <button class="primary" onclick="window.dialog.showModal();">?</button>
+
+
+      <dialog id="dialog_Ficheiro_Horarios">
+        <h2>Submissão de Ficheiros de Horários</h2>
+        <p>Para poder realizar a avaliação dos seus ficheiros de horários deve proceder à sua submissão em formato csv, configurados de acordo com o estabelecido em “Alterar Configurações de Leitura dos Ficheiros”.</p>
+
+        <p>Para fazer a submissão dos ficheiros, pode fazê-lo exclusivamente através de um dos seguintes modos de inserção (para cada modo de inserção, pode inserir múltiplos ficheiros):</p>
+        
+        <ul>
+            <li><strong>Submissão de ficheiros locais:</strong> Carregamento de ficheiros csv de horários, a partir da sua máquina local.</li>
+            <li><strong>Submissão de ficheiros remotos:</strong> Carregamento de ficheiros csv de horários armazenados remotamente, através de URL.</li>
+        </ul>
+
+        <p>Para selecionar o modo de inserção, coloque o botão de seleção na opção pretendida.</p>
+
+        <p>Para se proceder à leitura dos ficheiros, comece por verificar se as configurações de leitura de ambos os tipos de ficheiros correspondem às suas. Por exemplo, se no lugar do cabeçalho “Unidade de execução” os seus ficheiros de horário contiverem a designação “Unidade Curricular”, faça essa correspondência no local indicado. Por defeito, dentro das caixas de texto disponíveis, surgem as configurações já aplicadas.</p>
+        <button onclick="window.dialog.close();" aria-label="close" class="x">❌</button>
+      </dialog>
       
       <br><br>
       <input type="file" id="csvScheduleFileInput"; multiple>
