@@ -1006,5 +1006,6 @@ function createRequisitesChart(data){
   FusionCharts.ready(function () {
     new FusionCharts(chartConfig).render();
   });
+
 }
 
